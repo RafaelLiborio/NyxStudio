@@ -16,9 +16,18 @@ Abra `http://localhost:3000`, crie uma conta e depois clique no botão `+` à es
 
 ## Publicar uma versão de teste
 
-O repositório inclui `render.yaml` na raiz para criar um serviço Node no Render. Envie o projeto para o GitHub e, no Render, escolha **New → Blueprint**, conecte o repositório `NyxStudio` e confirme a configuração. Ao terminar o deploy, compartilhe o endereço `https://...onrender.com` com seus amigos. Todos devem criar conta no mesmo endereço.
+O repositório inclui `render.yaml` na raiz para criar um serviço Node no Render. Para manter dados entre reinícios:
 
-O plano de teste definido no Blueprint usa o disco temporário do serviço: mensagens e contas podem ser apagadas quando a instância reiniciar ou for publicada novamente. Para chamadas, cada participante precisa liberar microfone/câmera no navegador; algumas redes exigem TURN, que ainda não está configurado.
+1. Crie um projeto Supabase e execute `supabase/schema.sql` no **SQL Editor**.
+2. No Supabase, copie a **Project URL** e crie/consulte uma chave **Secret** em **Settings → API Keys**.
+3. No Render, abra **Dashboard → serviço Brasa → Environment** e adicione `SUPABASE_URL` com a Project URL e `SUPABASE_SECRET_KEY` com a Secret Key. Como o serviço Render já existe, adicione-as manualmente; não coloque a chave no GitHub nem no navegador.
+4. Salve as variáveis e aguarde o serviço reiniciar. Confira o log `Dados carregados do Supabase.` antes de criar a comunidade.
+
+O app usa o banco Supabase quando essas duas variáveis estão definidas e usa o arquivo local apenas no desenvolvimento.
+
+Depois, publique o serviço no Render e compartilhe o endereço `https://...onrender.com` com seus amigos. Todos devem criar conta no mesmo endereço. Para chamadas, cada participante precisa liberar microfone/câmera no navegador; algumas redes exigem TURN, que ainda não está configurado.
+
+O Supabase guarda o estado do protótipo em uma linha JSONB. Isso é adequado para o teste pequeno atual, mas ainda não é um modelo escalável para uma comunidade grande nem para várias instâncias do servidor. As novas comunidades devem ser criadas após configurar o Supabase; nenhum dado local é migrado automaticamente.
 
 ## O que funciona
 
@@ -30,7 +39,7 @@ O plano de teste definido no Blueprint usa o disco temporário do serviço: mens
 - Chamadas WebRTC com grade de participantes, microfone, áudio, câmera e compartilhamento de tela, até oito participantes.
 - Layout adaptado para celular e tema vermelho.
 
-Os dados são gravados em `brasa-data.json` nesta pasta. Faça cópias desse arquivo para backup.
+Sem Supabase configurado, os dados locais são gravados em `brasa-data.json` nesta pasta. Faça cópias desse arquivo para backup.
 
 ## Limites atuais
 
