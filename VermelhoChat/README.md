@@ -35,8 +35,10 @@ O Supabase guarda o estado do protótipo em uma linha JSONB. Isso é adequado pa
 - Comunidades, canais de texto e salas de voz salvos no servidor.
 - Convites de comunidade com validade de sete dias.
 - Mensagens diretas entre contas do Brasa.
+- Pedidos de amizade, lista de amigos e convite de amigos aceitos para comunidades.
+- Edição do próprio nome, usuário, foto e senha nas configurações de perfil.
 - Chat em tempo real, indicador de digitação, presença, busca nas mensagens carregadas, reações, edição e exclusão.
-- Chamadas WebRTC com grade de participantes, microfone, áudio, câmera e compartilhamento de tela, até oito participantes.
+- Chamadas WebRTC com participantes identificados, microfone, áudio, câmera e compartilhamento de tela, até oito participantes; seletor de qualidade de transmissão.
 - Layout adaptado para celular e tema vermelho.
 
 Sem Supabase configurado, os dados locais são gravados em `brasa-data.json` nesta pasta. Faça cópias desse arquivo para backup.

@@ -65,10 +65,13 @@
         <div id="voiceChannels"></div>
         <div class="section-title dm-heading"><span>MENSAGENS DIRETAS</span><button id="newDm" type="button" title="Nova conversa" aria-label="Nova conversa">＋</button></div>
         <div id="dmList"></div>
+        <div class="section-title friend-heading"><span>AMIGOS</span><button id="addFriend" type="button" title="Adicionar amigo" aria-label="Adicionar amigo">＋</button></div>
+        <div id="friendList" class="friend-list"></div>
       </div>
       <footer class="profile">
         <div class="avatar" id="myAvatar" aria-hidden="true">?</div>
         <div class="profile-name"><strong id="myName">Você</strong><small id="myHandle">online</small></div>
+        <button class="ghost" id="profileBtn" type="button" title="Editar meu perfil" aria-label="Editar meu perfil">⚙</button>
         <button class="ghost" id="logoutBtn" type="button" title="Sair da conta" aria-label="Sair da conta">⇥</button>
       </footer>
     </aside>
@@ -124,6 +127,9 @@
             <button id="deafenBtn" class="voice-control" type="button" title="Desativar seu áudio" aria-pressed="false"><span aria-hidden="true">◖</span><small>Áudio</small></button>
             <button id="videoBtn" class="voice-control" type="button" title="Ativar câmera" aria-pressed="false"><span aria-hidden="true">▣</span><small>Câmera</small></button>
             <button id="shareBtn" class="voice-control" type="button" title="Compartilhar tela" aria-pressed="false"><span aria-hidden="true">▱</span><small>Tela</small></button>
+            <label class="screen-quality-label" for="screenQuality">Qualidade
+              <select id="screenQuality" aria-label="Resolução da transmissão de tela"><option value="720">720p</option><option value="1080" selected>1080p</option><option value="1440">1440p</option></select>
+            </label>
           </div>
           <div id="callRoster" class="voice-count" aria-live="polite">1 participante</div>
           <button id="leaveCall" class="end-call" type="button" title="Sair da chamada"><span aria-hidden="true">×</span><small>Sair</small></button>
@@ -139,5 +145,22 @@
       <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
     </main>
   </div>
+  <dialog class="profile-dialog" id="profileDialog" aria-labelledby="profileTitle">
+    <form id="profileForm" method="dialog">
+      <header><div><p class="eyebrow">SUA CONTA</p><h2 id="profileTitle">Editar perfil</h2></div><button class="ghost" type="button" id="profileClose" aria-label="Fechar">×</button></header>
+      <label class="profile-photo-label">Foto de perfil
+        <input id="profilePhoto" type="file" accept="image/png,image/jpeg,image/webp">
+        <span class="profile-photo-preview" id="profilePhotoPreview">Adicionar foto</span>
+      </label>
+      <label>Nome de exibição<input name="displayName" maxlength="32" required></label>
+      <label>Nome de usuário<input name="username" minlength="3" maxlength="24" required></label>
+      <hr>
+      <p class="muted">Para trocar a senha, confirme a senha atual e informe uma nova.</p>
+      <label>Senha atual<input name="currentPassword" type="password" autocomplete="current-password"></label>
+      <label>Nova senha<input name="newPassword" type="password" minlength="8" autocomplete="new-password"></label>
+      <p id="profileError" class="form-error" role="alert"></p>
+      <footer><button type="button" class="inline-cancel" id="profileCancel">Cancelar</button><button type="submit" class="primary">Salvar alterações</button></footer>
+    </form>
+  </dialog>
 </body>
 </html>
