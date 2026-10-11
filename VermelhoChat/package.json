@@ -1,0 +1,8 @@
+{
+  "name": "brasa-chat",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Protótipo de chat com salas de voz WebRTC",
+  "scripts": { "start": "node server.js" },
+  "dependencies": { "express": "^5.1.0", "socket.io": "^4.8.1" }
+}
