@@ -53,48 +53,49 @@
       <button class="rail-logo" id="homeLogo" title="Ir para o início" aria-label="Ir para o início"><img src="/brasa-flame.svg" alt=""></button>
       <div class="rail-divider"></div>
       <div id="guildRail" class="rail-list"></div>
-      <button class="rail-add" id="createGuild" title="Criar comunidade" aria-label="Criar comunidade">＋</button>
+      <button class="rail-add" id="createGuild" title="Criar comunidade" aria-label="Criar comunidade"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
     </nav>
 
     <aside class="sidebar" aria-label="Navegação da comunidade">
       <header class="server-header">
         <div class="server-heading"><img class="server-brand-icon" src="/brasa-flame.svg" alt=""><div><strong id="guildName">Brasa</strong><small>ESPAÇO DA COMUNIDADE</small></div></div>
-        <button class="ghost invite-button" id="inviteBtn" type="button" title="Compartilhar convite" aria-label="Compartilhar convite">↗</button>
+        <div class="server-actions"><button class="ghost edit-guild-button hidden" id="editGuildBtn" type="button" title="Editar comunidade" aria-label="Editar comunidade"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg></button><button class="ghost invite-button" id="inviteBtn" type="button" title="Compartilhar convite" aria-label="Compartilhar convite"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>
       </header>
       <section class="community-card hidden" id="communityCard" aria-label="Sobre esta comunidade">
         <img src="/brasa-flame.svg" alt="" class="community-card-mark">
         <div><strong id="communityCardName">Brasa</strong><p>Mais que um servidor,<br>uma comunidade.</p></div>
       </section>
       <div class="side-scroll">
-        <button class="nav-item active" id="homeBtn" type="button"><span aria-hidden="true">⌂</span>Início</button>
-        <div class="section-title"><span>CANAIS DE TEXTO</span><button id="createTextChannel" type="button" title="Criar canal de texto" aria-label="Criar canal de texto">＋</button></div>
+        <button class="nav-item active" id="homeBtn" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-6v-7h-4v7H4a1 1 0 0 1-1-1z"/></svg>Início</button>
+        <div class="section-title"><span>CANAIS DE TEXTO</span><button id="createTextChannel" type="button" title="Criar canal de texto" aria-label="Criar canal de texto"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>
         <div id="textChannels"></div>
-        <div class="section-title voice-heading"><span>CANAIS DE VOZ</span><button id="createVoiceChannel" type="button" title="Criar sala de voz" aria-label="Criar sala de voz">＋</button></div>
+        <div class="section-title voice-heading"><span>CANAIS DE VOZ</span><button id="createVoiceChannel" type="button" title="Criar sala de voz" aria-label="Criar sala de voz"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>
         <div id="voiceChannels"></div>
-        <div class="section-title dm-heading"><span>MENSAGENS DIRETAS</span><button id="newDm" type="button" title="Nova conversa" aria-label="Nova conversa">＋</button></div>
+        <div class="section-title dm-heading"><span>MENSAGENS DIRETAS</span><button id="newDm" type="button" title="Nova conversa" aria-label="Nova conversa"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>
         <div id="dmList"></div>
-        <div class="section-title friend-heading"><span>AMIGOS</span><button id="addFriend" type="button" title="Adicionar amigo" aria-label="Adicionar amigo">＋</button></div>
+        <div class="section-title friend-heading"><span>AMIGOS</span><button id="addFriend" type="button" title="Adicionar amigo" aria-label="Adicionar amigo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>
         <div id="friendList" class="friend-list"></div>
       </div>
       <footer class="profile">
         <div class="avatar" id="myAvatar" aria-hidden="true">?</div>
         <div class="profile-name"><strong id="myName">Você</strong><small id="myHandle">online</small></div>
-        <button class="ghost" id="profileBtn" type="button" title="Editar meu perfil" aria-label="Editar meu perfil">⚙</button>
-        <button class="ghost" id="logoutBtn" type="button" title="Sair da conta" aria-label="Sair da conta">⇥</button>
+        <button class="ghost" id="profileBtn" type="button" title="Editar meu perfil" aria-label="Editar meu perfil"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.4 1.1-1.4 2.4-1.7-.7a8 8 0 0 1-1.6.9L16 21h-3l-.3-2.2a8 8 0 0 1-1.6-.9l-1.7.7L8 16.2l1.4-1.1a8 8 0 0 1 0-1.8L8 12.2l1.4-2.4 1.7.7a8 8 0 0 1 1.6-.9L13 7h3l.3 2.2a8 8 0 0 1 1.6.9l1.7-.7 1.4 2.4-1.4 1.1a8 8 0 0 1-.2 2.1Z"/></svg></button>
+        <button class="ghost" id="logoutBtn" type="button" title="Sair da conta" aria-label="Sair da conta"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H3M21 19V5a2 2 0 0 0-2-2h-6"/></svg></button>
       </footer>
     </aside>
     <button class="nav-backdrop" id="navBackdrop" aria-label="Fechar navegação"></button>
 
     <main class="main-panel">
       <header class="channel-header">
-        <button class="mobile-menu" id="mobileMenu" type="button" aria-label="Abrir navegação" aria-expanded="false">☰</button>
-        <span class="channel-symbol" id="channelSymbol" aria-hidden="true">◈</span>
+          <button class="mobile-menu" id="mobileMenu" type="button" aria-label="Abrir navegação" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+          <div class="dm-header-avatar hidden" id="dmHeaderAvatar" aria-hidden="true"></div><span class="channel-symbol" id="channelSymbol" aria-hidden="true">◈</span>
         <div class="channel-heading"><h2 id="conversationTitle">Início</h2><p id="conversationTopic">Escolha uma comunidade ou comece uma conversa.</p></div>
         <nav class="home-tabs hidden" id="homeTabs" aria-label="Navegação de mensagens"><button class="active" id="friendsTab" type="button">Amigos</button><button id="dmsTab" type="button">Mensagens diretas</button></nav>
         <div class="header-actions">
           <button class="icon-action" id="searchToggle" type="button" title="Buscar mensagens" aria-label="Buscar mensagens" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.7"></circle><path d="m16 16 4.2 4.2"></path></svg></button>
           <input class="search-input hidden" id="searchInput" placeholder="Buscar nesta conversa" aria-label="Buscar nesta conversa">
           <button class="icon-action notification-toggle" id="notificationToggle" type="button" title="Notificações" aria-label="Notificações" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><span class="notification-badge hidden" id="notificationCount">0</span></button>
+          <button class="icon-action" id="soundToggle" type="button" title="Desativar sons" aria-label="Desativar sons" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4zM15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg></button>
           <button class="icon-action" id="membersToggle" type="button" title="Mostrar membros" aria-label="Mostrar membros" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.1"></circle><path d="M3.5 19v-1.2a5.5 5.5 0 0 1 11 0V19zM16 5.4a3.1 3.1 0 0 1 0 5.8M17.3 14a4.8 4.8 0 0 1 3.2 4.5v.5h-3.1"></path></svg></button>
         </div>
       </header>
@@ -135,10 +136,10 @@
         <div class="voice-grid-wrap"><div class="voice-grid" id="voiceGrid"></div></div>
         <footer class="voice-controls">
           <div class="voice-control-group">
-            <button id="muteBtn" class="voice-control" type="button" title="Silenciar microfone" aria-pressed="false"><span aria-hidden="true">♩</span><small>Microfone</small></button>
-            <button id="deafenBtn" class="voice-control" type="button" title="Desativar seu áudio" aria-pressed="false"><span aria-hidden="true">◖</span><small>Áudio</small></button>
-            <button id="videoBtn" class="voice-control" type="button" title="Ativar câmera" aria-pressed="false"><span aria-hidden="true">▣</span><small>Câmera</small></button>
-            <button id="shareBtn" class="voice-control" type="button" title="Compartilhar tela" aria-pressed="false"><span aria-hidden="true">▱</span><small>Tela</small></button>
+            <button id="muteBtn" class="voice-control" type="button" title="Silenciar microfone" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8"/></svg><small>Microfone</small></button>
+            <button id="deafenBtn" class="voice-control" type="button" title="Desativar seu áudio" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4zM15.5 8.5a5 5 0 0 1 0 7"/></svg><small>Áudio</small></button>
+            <button id="videoBtn" class="voice-control" type="button" title="Ativar câmera" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 10 5-3v10l-5-3"/><rect x="3" y="6" width="12" height="12" rx="2"/></svg><small>Câmera</small></button>
+            <button id="shareBtn" class="voice-control" type="button" title="Compartilhar tela" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg><small>Tela</small></button>
             <label class="screen-quality-label" for="screenQuality">Qualidade
               <select id="screenQuality" aria-label="Resolução da transmissão de tela"><option value="720">720p</option><option value="1080" selected>1080p</option><option value="1440">1440p</option></select>
             </label>
@@ -174,6 +175,7 @@
       <footer><button type="button" class="inline-cancel" id="profileCancel">Cancelar</button><button type="submit" class="primary">Salvar alterações</button></footer>
     </form>
   </dialog>
+  <dialog class="profile-dialog" id="guildEditDialog" aria-labelledby="guildEditTitle"><form id="guildEditForm" method="dialog"><header><div><p class="eyebrow">CONFIGURAÇÕES</p><h2 id="guildEditTitle">Editar comunidade</h2></div><button class="ghost" type="button" id="guildEditClose" aria-label="Fechar">×</button></header><label>Nome da comunidade<input name="name" maxlength="48" minlength="2" required></label><p id="guildEditError" class="form-error" role="alert"></p><footer><button type="button" class="inline-cancel" id="guildEditCancel">Cancelar</button><button type="submit" class="primary">Salvar alterações</button></footer></form></dialog>
   <dialog class="profile-dialog user-dialog" id="userCardDialog" aria-labelledby="userCardName">
     <div class="user-dialog-content"><header><div><p class="eyebrow">PERFIL DO BRASA</p><h2 id="userCardName">Usuário</h2></div><button class="ghost" type="button" id="userCardClose" aria-label="Fechar">×</button></header><div class="user-card-identity"><div class="avatar" id="userCardAvatar"></div><div><strong id="userCardDisplayName"></strong><small id="userCardHandle"></small></div></div><p class="user-card-status" id="userCardStatus"></p><footer><button type="button" class="secondary" id="userCardAdd">Adicionar amigo</button><button type="button" class="primary" id="userCardView">Ver perfil</button></footer></div>
   </dialog>

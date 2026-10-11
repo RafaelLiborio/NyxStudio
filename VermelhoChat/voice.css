@@ -28,3 +28,19 @@
 .voice-control,.end-call{min-width:72px;height:62px}.end-call{min-width:80px}
 @media(max-width:700px){.voice-stage{inset:62px 0 0}.voice-stage-head h2{font-size:17px}.voice-person-name{font-size:14px}.voice-person-state{font-size:11px}.voice-controls{gap:8px}.voice-control,.end-call{min-width:52px}.voice-control small,.end-call small{font-size:10px}}
 @media(max-width:460px){.voice-stage{inset:58px 0 0}.voice-stage-head{padding:10px 12px}.voice-controls{padding-inline:7px}.voice-control,.end-call{min-width:44px}.voice-control-group{gap:4px}.voice-count{font-size:11px}}
+
+/* Keep voice participants and shared screens inside equal, predictable tiles. */
+.voice-grid{width:min(100%,1440px);grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr));align-items:stretch;align-content:center}
+.voice-person{width:100%;min-width:0;min-height:0;aspect-ratio:16/10}
+.voice-person.screen-share.has-video{min-height:0;aspect-ratio:16/10}
+.voice-person.screen-share.has-video video{object-fit:contain;width:100%;height:100%}
+.voice-person .video-expand svg{width:18px;height:18px}
+.voice-person:fullscreen{aspect-ratio:auto;min-height:0}
+@media(max-width:700px){.voice-grid{grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr))}.voice-person{min-height:0;aspect-ratio:4/3}.voice-person.screen-share.has-video{min-height:0;aspect-ratio:4/3}}
+@media(max-width:390px){.voice-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.voice-person{aspect-ratio:1/1;min-height:0}.voice-person.screen-share.has-video{aspect-ratio:1/1}}
+
+/* Constrain the grid row so call controls remain on screen as participants join/share. */
+.voice-stage{height:auto;min-height:0;grid-template-rows:max-content minmax(0,1fr) max-content}
+.voice-stage-head,.voice-controls{min-width:0;flex:none}
+.voice-grid-wrap{min-width:0;min-height:0;overflow:auto;overscroll-behavior:contain;align-content:center}
+.voice-grid{min-width:0;min-height:0;max-height:100%;align-self:center}

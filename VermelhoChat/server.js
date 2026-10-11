@@ -203,6 +203,17 @@ app.post('/api/guilds', auth, async (req, res) => {
   db.guilds.push(guild); const channel={id:id(),guildId:guild.id,name:'geral',type:'text',topic:'Conversa da comunidade.'}; db.channels.push(channel); await save();
   res.json({ id:guild.id,name:guild.name,icon:guild.icon,role:'owner',channels:[channel] });
 });
+app.patch('/api/guilds/:id', auth, async (req,res)=>{
+  const guild=db.guilds.find(item=>item.id===req.params.id);
+  if(!guild)return replyError(res,'Comunidade não encontrada.',404);
+  if(!canManage(guild.id,req.user.id))return replyError(res,'Somente quem administra esta comunidade pode editá-la.',403);
+  const name=cleanText(req.body.name,48);
+  if(name.length<2)return replyError(res,'O nome da comunidade precisa ter ao menos 2 caracteres.');
+  guild.name=name;guild.icon=name.slice(0,1).toUpperCase();await save();
+  const community={id:guild.id,name:guild.name,icon:guild.icon,role:member(guild.id,req.user.id).role,channels:db.channels.filter(channel=>channel.guildId===guild.id)};
+  io.to(`guild:${guild.id}`).emit('guild:updated',{id:guild.id,name:guild.name,icon:guild.icon});
+  res.json(community);
+});
 app.get('/api/guilds/:id/members', auth, (req,res)=>{
   const g=db.guilds.find(x=>x.id===req.params.id); if(!g||!member(g.id,req.user.id))return replyError(res,'Comunidade não encontrada.',404);
   res.json(g.members.map(m=>({...publicUser(db.users.find(u=>u.id===m.userId)),role:m.role,state:online.has(m.userId)?'online':'offline'})).filter(u=>u.id));
