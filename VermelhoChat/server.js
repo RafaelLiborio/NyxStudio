@@ -103,8 +103,9 @@ app.get('/', (_req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 app.get('/app.js', (_req, res) => res.sendFile(path.join(__dirname, 'app.js')));
 app.get('/style.css', (_req, res) => res.sendFile(path.join(__dirname, 'style.css')));
 app.get('/voice.css', (_req, res) => res.sendFile(path.join(__dirname, 'voice.css')));
+app.get('/brasa-flame.svg', (_req, res) => res.sendFile(path.join(__dirname, 'brasa-flame.svg'), { headers: { 'Cache-Control': 'public, max-age=86400' } }));
+app.get('/brasa-login-bg.svg', (_req, res) => res.sendFile(path.join(__dirname, 'brasa-login-bg.svg'), { headers: { 'Cache-Control': 'public, max-age=86400' } }));
 app.get('/api/session', auth, (req, res) => res.json({ user: publicUser(req.user) }));
-
 app.post('/api/register', async (req, res) => {
   const username = cleanText(req.body.username, 24).toLowerCase().replace(/[^a-z0-9_.-]/g, '');
   const displayName = cleanText(req.body.displayName, 32) || username;

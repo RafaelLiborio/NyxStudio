@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#a91f36">
   <meta name="description" content="Converse, jogue e faça chamadas com sua comunidade no Brasa.">
+  <link rel="icon" type="image/svg+xml" href="/brasa-flame.svg">
   <title>Brasa — conversas da sua comunidade</title>
   <link rel="stylesheet" href="/style.css">
   <link rel="stylesheet" href="/voice.css">
@@ -13,34 +14,43 @@
 </head>
 <body>
   <section class="auth-screen" id="authScreen">
-    <div class="auth-card">
-      <div class="brand-lockup"><div class="brand-mark" aria-hidden="true">B</div><span>BRASA</span></div>
-      <p class="eyebrow">SUA COMUNIDADE, DO SEU JEITO</p>
-      <h1 id="authTitle">Entre no Brasa</h1>
-      <p class="muted" id="authSubtitle">Converse com seus amigos e comunidades.</p>
-      <form id="authForm">
-        <label id="displayNameField" class="hidden">Como quer ser chamado?
-          <input name="displayName" maxlength="32" autocomplete="nickname" placeholder="Nome de exibição">
-        </label>
-        <label>Usuário
-          <input name="username" minlength="3" maxlength="24" required autocomplete="username" placeholder="seuusuario">
-        </label>
-        <label>Senha
-          <input name="password" type="password" minlength="8" required autocomplete="current-password" placeholder="Mínimo de 8 caracteres">
-        </label>
-        <button class="primary full" id="authSubmit">Entrar</button>
-      </form>
-      <p class="auth-switch"><span id="authSwitchText">Ainda não tem conta?</span>
-        <button id="authSwitch" class="link-button" type="button">Criar conta</button>
-      </p>
-      <p class="form-error" id="authError" role="alert"></p>
+    <div class="auth-topbar">
+      <button class="theme-toggle" id="themeToggle" type="button" aria-label="Alternar tema"><span id="themeModeText">Modo escuro</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 15.4A8.5 8.5 0 0 1 8.6 3.8 8.5 8.5 0 1 0 20.2 15.4Z"/></svg></button>
     </div>
-    <p class="auth-footnote">Um espaço para conversar, jogar e ficar por perto.</p>
+    <div class="auth-shell">
+      <section class="auth-hero" aria-label="Sobre o Brasa">
+        <div class="hero-brand"><img src="/brasa-flame.svg" alt=""><h2><span>Bra</span><em>sa</em></h2></div>
+        <p class="hero-tagline">Mais que um servidor,<br>uma comunidade.</p>
+        <div class="hero-features">
+          <div class="hero-feature"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H6l-3 2v-5.5A7.5 7.5 0 1 1 20 11.5Z"/><path d="M8 11h.01M12 11h.01M16 11h.01"/></svg><strong>Converse</strong><span>com sua galera</span></div>
+          <div class="hero-feature"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20v-1.5a6 6 0 0 1 12 0V20zM17 5a3 3 0 0 1 0 6M18 14a4 4 0 0 1 3 4v2h-3"/></svg><strong>Faça amigos</strong><span>de verdade</span></div>
+          <div class="hero-feature"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12a3 3 0 0 1 2.8 2l1.5 5a3 3 0 0 1-4.5 3.4L14 15h-4l-3.8 2.4A3 3 0 0 1 1.7 14l1.5-5A3 3 0 0 1 6 7Z"/><path d="M7 10v4M5 12h4M16.5 11.5h.01M18.5 13.5h.01"/></svg><strong>Compartilhe</strong><span>seus interesses</span></div>
+          <div class="hero-feature"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m13 2-9 12h7l-1 8 10-13h-7z"/></svg><strong>Viva experiências</strong><span>incríveis</span></div>
+        </div>
+        <div class="hero-foot"><img src="/brasa-flame.svg" alt=""><strong>Brasa</strong><i></i><span>Conectando pessoas, ideias e paixões.</span></div>
+      </section>
+      <section class="auth-card" id="authCard" aria-labelledby="authTitle">
+        <div class="login-brand"><img src="/brasa-flame.svg" alt=""><span>Bra<em>sa</em></span></div>
+        <h1 id="authTitle">Bem-vindo <em>de volta!</em></h1>
+        <p class="muted" id="authSubtitle">Faça login para continuar na sua comunidade.</p>
+        <form id="authForm">
+          <label id="displayNameField" class="hidden">Como quer ser chamado?
+            <input name="displayName" maxlength="32" autocomplete="nickname" placeholder="Nome de exibição">
+          </label>
+          <label class="auth-input-wrap"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20v-1.5a7 7 0 0 1 14 0V20z"/></svg><input name="username" minlength="3" maxlength="24" required autocomplete="username" placeholder="Seu nome de usuário" aria-label="Usuário"></label>
+          <label class="auth-input-wrap"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></svg><input name="password" id="authPassword" type="password" minlength="8" required autocomplete="current-password" placeholder="Senha" aria-label="Senha"><button class="password-toggle" id="passwordToggle" type="button" aria-label="Mostrar senha" title="Mostrar senha"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg></button></label>
+          <div class="auth-options"><label class="remember-option"><input id="rememberMe" type="checkbox"><span class="custom-check" aria-hidden="true"></span><span>Lembrar de mim</span></label><button class="forgot-password" id="forgotPassword" type="button">Esqueceu sua senha?</button></div>
+          <p class="form-error" id="authError" role="alert"></p>
+          <button class="primary full auth-submit" id="authSubmit" type="submit"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6"/></svg><span>Entrar</span></button>
+        </form>
+        <p class="auth-switch"><span id="authSwitchText">Não tem uma conta?</span><button id="authSwitch" class="link-button" type="button">Criar conta</button></p>
+      </section>
+    </div>
   </section>
 
   <div class="layout hidden" id="layout">
     <nav class="guild-rail" aria-label="Comunidades">
-      <button class="rail-logo" id="homeLogo" title="Ir para o início" aria-label="Ir para o início">B</button>
+      <button class="rail-logo" id="homeLogo" title="Ir para o início" aria-label="Ir para o início"><img src="/brasa-flame.svg" alt=""></button>
       <div class="rail-divider"></div>
       <div id="guildRail" class="rail-list"></div>
       <button class="rail-add" id="createGuild" title="Criar comunidade" aria-label="Criar comunidade">＋</button>
@@ -48,9 +58,13 @@
 
     <aside class="sidebar" aria-label="Navegação da comunidade">
       <header class="server-header">
-        <div class="server-heading"><strong id="guildName">Brasa</strong><small>ESPAÇO DA COMUNIDADE</small></div>
+        <div class="server-heading"><img class="server-brand-icon" src="/brasa-flame.svg" alt=""><div><strong id="guildName">Brasa</strong><small>ESPAÇO DA COMUNIDADE</small></div></div>
         <button class="ghost invite-button" id="inviteBtn" type="button" title="Compartilhar convite" aria-label="Compartilhar convite">↗</button>
       </header>
+      <section class="community-card hidden" id="communityCard" aria-label="Sobre esta comunidade">
+        <img src="/brasa-flame.svg" alt="" class="community-card-mark">
+        <div><strong id="communityCardName">Brasa</strong><p>Mais que um servidor,<br>uma comunidade.</p></div>
+      </section>
       <div class="side-scroll">
         <form class="inline-action hidden" id="inlineAction">
           <strong id="inlineTitle"></strong>

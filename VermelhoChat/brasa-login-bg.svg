@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="base" x2="1" y2="1"><stop stop-color="#080403"/><stop offset=".52" stop-color="#020304"/><stop offset="1" stop-color="#080305"/></linearGradient>
+    <radialGradient id="glow"><stop stop-color="#af090f" stop-opacity=".4"/><stop offset="1" stop-color="#650408" stop-opacity="0"/></radialGradient>
+    <linearGradient id="rock" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#230708"/><stop offset=".28" stop-color="#090506"/><stop offset=".52" stop-color="#39090b"/><stop offset=".7" stop-color="#0a0506"/><stop offset="1" stop-color="#190608"/></linearGradient>
+    <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".74" numOctaves="3" seed="8"/><feColorMatrix values=".35 0 0 0 .18 .08 .08 0 0 .01 .04 0 .04 0 .01 0 0 0 .32 0"/><feBlend in="SourceGraphic" mode="screen"/></filter>
+    <filter id="blur"><feGaussianBlur stdDeviation="18"/></filter>
+  </defs>
+  <path fill="url(#base)" d="M0 0h1600v1000H0z"/>
+  <ellipse cx="170" cy="180" rx="440" ry="410" fill="url(#glow)"/>
+  <ellipse cx="1510" cy="900" rx="460" ry="390" fill="url(#glow)"/>
+  <path d="M0 0h300L0 278v-91L180 45 0 221zm0 360 113-86-64 116 96 81-145-24zm0 475 172-76 223 241H0zm1600-100-154 80 154 185zm0-245-211 90 96-126-77-68 192-196z" fill="url(#rock)" opacity=".92"/>
+  <path d="M0 192 190 0M0 279l159-145 85-125M0 405l88-115-33 93 111 79M0 852l154-77 225 225M1600 520l-168 72 55-111-73-72 186-190M1600 738l-143 75 143 176" fill="none" stroke="#f10d19" stroke-opacity=".66" stroke-width="3"/>
+  <path d="m31 258 93-81 43-67-14 79-94 91 8 77-53 44m-7 458 89-32 99-71 39 62 129 182M1573 210l-89 115-66 38 91 20 91-43m0 435-94 51-88 110-83 42 54 45" fill="none" stroke="#ff1725" stroke-opacity=".42" stroke-width="2"/>
+  <path d="M0 0h390L194 183 0 345zm0 591 128 114-34 178 277 117H0zm1600 0-120-86 120-164zm0 409h-316l153-145 163-63z" fill="#000" opacity=".52" filter="url(#grain)"/>
+  <g fill="#ff1c27" opacity=".85" filter="url(#blur)"><circle cx="367" cy="155" r="7"/><circle cx="124" cy="806" r="8"/><circle cx="1512" cy="845" r="9"/></g>
+  <g fill="#ff1c27"><circle cx="367" cy="155" r="2.4"/><circle cx="124" cy="806" r="2.7"/><circle cx="1512" cy="845" r="2.8"/><circle cx="1487" cy="374" r="2"/></g>
+  <path d="M0 0h1600v1000H0z" fill="#000" opacity=".24"/>
+</svg>
