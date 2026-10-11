@@ -66,12 +66,6 @@
         <div><strong id="communityCardName">Brasa</strong><p>Mais que um servidor,<br>uma comunidade.</p></div>
       </section>
       <div class="side-scroll">
-        <form class="inline-action hidden" id="inlineAction">
-          <strong id="inlineTitle"></strong>
-          <input id="inlineInput" maxlength="48" placeholder="Nome">
-          <div><button type="button" class="inline-cancel" id="inlineCancel">Cancelar</button><button class="inline-submit">Criar</button></div>
-          <p class="form-error" id="inlineError" role="alert"></p>
-        </form>
         <button class="nav-item active" id="homeBtn" type="button"><span aria-hidden="true">⌂</span>Início</button>
         <div class="section-title"><span>CANAIS DE TEXTO</span><button id="createTextChannel" type="button" title="Criar canal de texto" aria-label="Criar canal de texto">＋</button></div>
         <div id="textChannels"></div>
@@ -96,12 +90,15 @@
         <button class="mobile-menu" id="mobileMenu" type="button" aria-label="Abrir navegação" aria-expanded="false">☰</button>
         <span class="channel-symbol" id="channelSymbol" aria-hidden="true">◈</span>
         <div class="channel-heading"><h2 id="conversationTitle">Início</h2><p id="conversationTopic">Escolha uma comunidade ou comece uma conversa.</p></div>
+        <nav class="home-tabs hidden" id="homeTabs" aria-label="Navegação de mensagens"><button class="active" id="friendsTab" type="button">Amigos</button><button id="dmsTab" type="button">Mensagens diretas</button></nav>
         <div class="header-actions">
           <button class="icon-action" id="searchToggle" type="button" title="Buscar mensagens" aria-label="Buscar mensagens" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.7"></circle><path d="m16 16 4.2 4.2"></path></svg></button>
           <input class="search-input hidden" id="searchInput" placeholder="Buscar nesta conversa" aria-label="Buscar nesta conversa">
+          <button class="icon-action notification-toggle" id="notificationToggle" type="button" title="Notificações" aria-label="Notificações" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><span class="notification-badge hidden" id="notificationCount">0</span></button>
           <button class="icon-action" id="membersToggle" type="button" title="Mostrar membros" aria-label="Mostrar membros" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.1"></circle><path d="M3.5 19v-1.2a5.5 5.5 0 0 1 11 0V19zM16 5.4a3.1 3.1 0 0 1 0 5.8M17.3 14a4.8 4.8 0 0 1 3.2 4.5v.5h-3.1"></path></svg></button>
         </div>
       </header>
+      <section class="notification-panel hidden" id="notificationPanel" aria-label="Notificações"><header><strong>Notificações</strong><button id="notificationReadAll" type="button">Marcar tudo como lido</button></header><div class="notification-list" id="notificationList"></div></section>
 
       <div class="workspace">
         <section class="message-pane" aria-label="Conversa">
@@ -112,6 +109,7 @@
             <p>Crie uma comunidade para reunir seus amigos, ou abra uma conversa direta.</p>
             <button class="primary" id="welcomeCreate" type="button">Criar minha comunidade</button>
           </div>
+          <section id="friendHome" class="friend-home hidden" aria-label="Amigos"><header><div><p class="eyebrow">SOCIAL</p><h1>Amigos</h1><p>Converse e acompanhe seus amigos no Brasa.</p></div><button class="primary" id="friendHomeAdd" type="button">Adicionar amigo</button></header><div id="friendHomeList" class="friend-home-list"></div></section>
           <div id="messages" class="messages hidden" aria-live="polite" aria-label="Mensagens"></div>
           <p class="search-empty hidden" id="searchEmpty" role="status">Nenhuma mensagem encontrada.</p>
           <div class="typing-line" id="typingLine" aria-live="polite"></div>
@@ -174,6 +172,21 @@
       <label>Nova senha<input name="newPassword" type="password" minlength="8" autocomplete="new-password"></label>
       <p id="profileError" class="form-error" role="alert"></p>
       <footer><button type="button" class="inline-cancel" id="profileCancel">Cancelar</button><button type="submit" class="primary">Salvar alterações</button></footer>
+    </form>
+  </dialog>
+  <dialog class="profile-dialog user-dialog" id="userCardDialog" aria-labelledby="userCardName">
+    <div class="user-dialog-content"><header><div><p class="eyebrow">PERFIL DO BRASA</p><h2 id="userCardName">Usuário</h2></div><button class="ghost" type="button" id="userCardClose" aria-label="Fechar">×</button></header><div class="user-card-identity"><div class="avatar" id="userCardAvatar"></div><div><strong id="userCardDisplayName"></strong><small id="userCardHandle"></small></div></div><p class="user-card-status" id="userCardStatus"></p><footer><button type="button" class="secondary" id="userCardAdd">Adicionar amigo</button><button type="button" class="primary" id="userCardView">Ver perfil</button></footer></div>
+  </dialog>
+  <dialog class="profile-dialog user-dialog" id="userDetailDialog" aria-labelledby="userDetailName">
+    <div class="user-dialog-content"><header><div><p class="eyebrow">PERFIL</p><h2 id="userDetailName">Usuário</h2></div><button class="ghost" type="button" id="userDetailClose" aria-label="Fechar">×</button></header><div class="user-detail"><div class="avatar" id="userDetailAvatar"></div><strong id="userDetailDisplayName"></strong><span id="userDetailHandle"></span><p id="userDetailMembership"></p></div><footer><button type="button" class="secondary" id="userDetailAdd">Adicionar amigo</button><button type="button" class="primary" id="userDetailMessage">Mensagem</button></footer></div>
+  </dialog>
+  <dialog class="profile-dialog action-dialog" id="actionDialog" aria-labelledby="inlineTitle">
+    <form id="inlineAction" method="dialog">
+      <header><div><p class="eyebrow">BRASA</p><h2 id="inlineTitle">Adicionar</h2></div><button class="ghost" type="button" id="inlineClose" aria-label="Fechar">×</button></header>
+      <p class="action-prompt hidden" id="inlinePrompt"></p>
+      <label id="inlineFieldLabel" for="inlineInput">Nome<input id="inlineInput" maxlength="48" placeholder="Nome" autocomplete="off"></label>
+      <p class="form-error" id="inlineError" role="alert"></p>
+      <footer><button type="button" class="inline-cancel" id="inlineCancel">Cancelar</button><button type="submit" class="primary inline-submit">Criar</button></footer>
     </form>
   </dialog>
 </body>

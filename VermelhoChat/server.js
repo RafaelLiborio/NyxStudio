@@ -18,9 +18,10 @@ if (Boolean(SUPABASE_URL) !== Boolean(SUPABASE_KEY)) {
 const useSupabase = Boolean(SUPABASE_URL && SUPABASE_KEY);
 const sessions = new Map();
 const online = new Map();
+const voiceVideoModes = new Map();
 
 function emptyData() {
-  return { users: [], guilds: [], channels: [], messages: [], reactions: [], dms: [], dmMessages: [], invites: [], friendRequests: [] };
+  return { users: [], guilds: [], channels: [], messages: [], reactions: [], dms: [], dmMessages: [], invites: [], friendRequests: [], notifications: [] };
 }
 function normalizeData(data) {
   const normalized = emptyData();
@@ -95,6 +96,18 @@ function emitPresence(userId, state) {
 }
 function replyError(res, error, status = 400) { return res.status(status).json({ error }); }
 function cleanText(value, max = 2000) { return typeof value === 'string' ? value.trim().slice(0, max) : ''; }
+async function createNotifications(userIds, type, title, message, metadata = {}) {
+  const targets = [...new Set(userIds)].filter(Boolean);
+  if (!targets.length) return;
+  const created = targets.map(userId => ({ id: id(), userId, type, title, message, metadata, createdAt: Date.now(), readAt: null }));
+  db.notifications.push(...created);
+  for (const userId of targets) {
+    const own = db.notifications.filter(item => item.userId === userId);
+    if (own.length > 300) db.notifications = db.notifications.filter(item => item.userId !== userId || own.indexOf(item) >= own.length - 300);
+  }
+  await save();
+  created.forEach(item => io.to(`user:${item.userId}`).emit('notification:new', item));
+}
 
 app.disable('x-powered-by');
 app.use(express.json({ limit: '128kb' }));
@@ -106,6 +119,9 @@ app.get('/voice.css', (_req, res) => res.sendFile(path.join(__dirname, 'voice.cs
 app.get('/brasa-flame.svg', (_req, res) => res.sendFile(path.join(__dirname, 'brasa-flame.svg'), { headers: { 'Cache-Control': 'public, max-age=86400' } }));
 app.get('/brasa-login-bg.svg', (_req, res) => res.sendFile(path.join(__dirname, 'brasa-login-bg.svg'), { headers: { 'Cache-Control': 'public, max-age=86400' } }));
 app.get('/api/session', auth, (req, res) => res.json({ user: publicUser(req.user) }));
+app.get('/api/notifications', auth, (req, res) => res.json(db.notifications.filter(item => item.userId === req.user.id).slice(-60).reverse()));
+app.post('/api/notifications/read-all', auth, async (req, res) => { const now = Date.now(); db.notifications.forEach(item => { if (item.userId === req.user.id && !item.readAt) item.readAt = now; }); await save(); res.json({ ok: true }); });
+app.patch('/api/notifications/:id/read', auth, async (req, res) => { const item = db.notifications.find(row => row.id === req.params.id && row.userId === req.user.id); if (!item) return replyError(res, 'Notificação não encontrada.', 404); item.readAt ||= Date.now(); await save(); res.json(item); });
 app.post('/api/register', async (req, res) => {
   const username = cleanText(req.body.username, 24).toLowerCase().replace(/[^a-z0-9_.-]/g, '');
   const displayName = cleanText(req.body.displayName, 32) || username;
@@ -161,12 +177,14 @@ app.post('/api/friends', auth, async (req, res) => {
   if (row?.status === 'accepted') return replyError(res, 'Vocês já são amigos.', 409);
   if (row?.status === 'pending' && row.toId === req.user.id) {
     row.status = 'accepted'; row.acceptedAt = Date.now(); await save();
+    await createNotifications([other.id], 'friend_accepted', 'Pedido aceito', `${req.user.displayName} aceitou seu pedido de amizade.`, { userId: req.user.id });
     io.to(`user:${other.id}`).emit('friends:update'); io.to(`user:${req.user.id}`).emit('friends:update');
     return res.json({ status: 'accepted', user: publicUser(other) });
   }
   if (row) return replyError(res, 'Já existe um pedido de amizade pendente.', 409);
   row = { id: id(), fromId: req.user.id, toId: other.id, status: 'pending', createdAt: Date.now() };
   db.friendRequests.push(row); await save();
+  await createNotifications([other.id], 'friend_request', 'Novo pedido de amizade', `${req.user.displayName} quer adicionar você como amigo.`, { userId: req.user.id });
   io.to(`user:${other.id}`).emit('friends:update');
   res.json({ status: row.status, user: publicUser(other) });
 });
@@ -204,14 +222,16 @@ app.post('/api/guilds/:id/members', auth, async (req, res) => {
   const friends = db.friendRequests.some(x => x.status === 'accepted' && [x.fromId, x.toId].includes(req.user.id) && [x.fromId, x.toId].includes(req.body.userId));
   if (!guild || !member(guild.id, req.user.id)) return replyError(res, 'Você não faz parte desta comunidade.', 403);
   if (!other || !friends) return replyError(res, 'Você só pode convidar uma pessoa que já é sua amiga.', 403);
-  if (!member(guild.id, other.id)) { guild.members.push({ userId: other.id, role: 'member', joinedAt: Date.now() }); await save(); }
+  const added = !member(guild.id, other.id);
+  if (added) { guild.members.push({ userId: other.id, role: 'member', joinedAt: Date.now() }); await save(); }
   const community = { id: guild.id, name: guild.name, icon: guild.icon, role: member(guild.id, other.id).role, channels: db.channels.filter(c => c.guildId === guild.id) };
+  if (added) await createNotifications([other.id], 'guild_added', 'Você entrou em uma comunidade', `${req.user.displayName} adicionou você a ${guild.name}.`, { guildId: guild.id });
   io.to(`user:${other.id}`).emit('guild:added', community);
   res.json(community);
 });
 app.post('/api/invites/:code/join', auth, async (req,res)=>{
   const invite=db.invites.find(x=>x.code===req.params.code&&x.expiresAt>Date.now());const guild=invite&&db.guilds.find(g=>g.id===invite.guildId);if(!guild)return replyError(res,'Convite inválido ou expirado.',404);
-  if(!member(guild.id,req.user.id))guild.members.push({userId:req.user.id,role:'member',joinedAt:Date.now()});await save();res.json({id:guild.id,name:guild.name,icon:guild.icon,role:member(guild.id,req.user.id).role,channels:db.channels.filter(c=>c.guildId===guild.id)});
+  const joined=!member(guild.id,req.user.id);if(joined)guild.members.push({userId:req.user.id,role:'member',joinedAt:Date.now()});await save();if(joined)await createNotifications([invite.createdBy],'guild_joined','Novo membro na comunidade',`${req.user.displayName} entrou em ${guild.name}.`,{guildId:guild.id});res.json({id:guild.id,name:guild.name,icon:guild.icon,role:member(guild.id,req.user.id).role,channels:db.channels.filter(c=>c.guildId===guild.id)});
 });
 
 app.get('/api/channels/:id/messages', auth, (req,res)=>{
@@ -220,7 +240,7 @@ app.get('/api/channels/:id/messages', auth, (req,res)=>{
 });
 app.post('/api/channels/:id/messages', auth, async (req,res)=>{
   const channel=db.channels.find(c=>c.id===req.params.id);if(!channel||channel.type!=='text'||!member(channel.guildId,req.user.id))return replyError(res,'Canal não encontrado.',404);
-  const text=cleanText(req.body.text);if(!text)return replyError(res,'A mensagem está vazia.');const message={id:id(),channelId:channel.id,userId:req.user.id,text,createdAt:Date.now(),editedAt:null};db.messages.push(message);await save();const result={...message,user:publicUser(req.user),reactions:[]};io.to(`channel:${channel.id}`).emit('message:new',result);res.json(result);
+  const text=cleanText(req.body.text);if(!text)return replyError(res,'A mensagem está vazia.');const message={id:id(),channelId:channel.id,userId:req.user.id,text,createdAt:Date.now(),editedAt:null};db.messages.push(message);await save();const result={...message,user:publicUser(req.user),reactions:[]};io.to(`channel:${channel.id}`).emit('message:new',result);const guild=db.guilds.find(item=>item.id===channel.guildId);await createNotifications(guild.members.map(item=>item.userId).filter(userId=>userId!==req.user.id),'channel_message',`Nova mensagem em #${channel.name}`,`${req.user.displayName}: ${text.slice(0,120)}`,{guildId:guild.id,channelId:channel.id,senderId:req.user.id});res.json(result);
 });
 app.patch('/api/messages/:id', auth, async (req,res)=>{
   const m=db.messages.find(x=>x.id===req.params.id);if(!m||m.userId!==req.user.id)return replyError(res,'Mensagem não encontrada ou sem permissão.',404);const text=cleanText(req.body.text);if(!text)return replyError(res,'A mensagem está vazia.');m.text=text;m.editedAt=Date.now();await save();io.to(`channel:${m.channelId}`).emit('message:edit',{id:m.id,text:m.text,editedAt:m.editedAt});res.json(m);
@@ -236,7 +256,7 @@ app.get('/api/users/search',auth,(req,res)=>{const q=cleanText(req.query.q,24).t
 app.get('/api/dms',auth,(req,res)=>res.json(db.dms.filter(d=>d.userIds.includes(req.user.id)).map(d=>({id:d.id,users:d.userIds.filter(id=>id!==req.user.id).map(id=>publicUser(db.users.find(u=>u.id===id))).filter(Boolean)}))));
 app.post('/api/dms',auth,async(req,res)=>{const other=db.users.find(u=>u.id===req.body.userId);if(!other||other.id===req.user.id)return replyError(res,'Usuário não encontrado.',404);let dm=db.dms.find(d=>d.userIds.includes(req.user.id)&&d.userIds.includes(other.id)&&d.userIds.length===2);if(!dm){dm={id:id(),userIds:[req.user.id,other.id]};db.dms.push(dm);await save()}res.json({id:dm.id,users:[publicUser(other)]})});
 app.get('/api/dms/:id/messages',auth,(req,res)=>{const dm=db.dms.find(d=>d.id===req.params.id&&d.userIds.includes(req.user.id));if(!dm)return replyError(res,'Conversa não encontrada.',404);res.json(db.dmMessages.filter(m=>m.dmId===dm.id).slice(-100).map(m=>({...m,user:publicUser(db.users.find(u=>u.id===m.userId))})))});
-app.post('/api/dms/:id/messages',auth,async(req,res)=>{const dm=db.dms.find(d=>d.id===req.params.id&&d.userIds.includes(req.user.id));if(!dm)return replyError(res,'Conversa não encontrada.',404);const text=cleanText(req.body.text);if(!text)return replyError(res,'A mensagem está vazia.');const m={id:id(),dmId:dm.id,userId:req.user.id,text,createdAt:Date.now()};db.dmMessages.push(m);await save();const result={...m,user:publicUser(req.user)};io.to(`dm:${dm.id}`).emit('dm:new',result);res.json(result)});
+app.post('/api/dms/:id/messages',auth,async(req,res)=>{const dm=db.dms.find(d=>d.id===req.params.id&&d.userIds.includes(req.user.id));if(!dm)return replyError(res,'Conversa não encontrada.',404);const text=cleanText(req.body.text);if(!text)return replyError(res,'A mensagem está vazia.');const m={id:id(),dmId:dm.id,userId:req.user.id,text,createdAt:Date.now()};db.dmMessages.push(m);await save();const result={...m,user:publicUser(req.user)};io.to(`dm:${dm.id}`).emit('dm:new',result);await createNotifications(dm.userIds.filter(userId=>userId!==req.user.id),'dm_message','Nova mensagem direta',`${req.user.displayName}: ${text.slice(0,120)}`,{dmId:dm.id,senderId:req.user.id});res.json(result)});
 
 function getGuildVoiceRoster(guildId) {
   return db.channels.filter(c => c.guildId === guildId && c.type === 'voice').map(channel => {
@@ -258,11 +278,12 @@ io.use((socket,next)=>{const s=parseSocketSession(socket);const user=s&&db.users
 io.on('connection',socket=>{
   const user=socket.user;let voiceRoom=null;socket.join(`user:${user.id}`);emitPresence(user.id,'online');
   socket.on('subscribe:guild',guildId=>{const guild=db.guilds.find(g=>g.id===guildId);if(!guild||!member(guildId,user.id))return;socket.join(`guild:${guildId}`);socket.emit('guild:voice-roster',{guildId,channels:getGuildVoiceRoster(guildId)})});
+  socket.on('voice-video-mode',({mode}={})=>{if(!voiceRoom||!['screen','camera','none'].includes(mode))return;if(mode==='none')voiceVideoModes.delete(user.id);else voiceVideoModes.set(user.id,mode);socket.to(voiceRoom).emit('voice-video-mode',{userId:user.id,mode})});
   socket.on('subscribe:channel',channelId=>{const c=db.channels.find(x=>x.id===channelId);if(c&&member(c.guildId,user.id))socket.join(`channel:${c.id}`)});
   socket.on('subscribe:dm',dmId=>{const d=db.dms.find(x=>x.id===dmId&&x.userIds.includes(user.id));if(d)socket.join(`dm:${d.id}`)});
   socket.on('typing',({channelId,dmId}={})=>{if(channelId){const c=db.channels.find(x=>x.id===channelId);if(c&&member(c.guildId,user.id))socket.to(`channel:${c.id}`).emit('typing',{user:publicUser(user),channelId})}else if(dmId){const d=db.dms.find(x=>x.id===dmId&&x.userIds.includes(user.id));if(d)socket.to(`dm:${d.id}`).emit('typing',{user:publicUser(user),dmId})}});
-  socket.on('voice-join',({room}={})=>{if(voiceRoom)leaveVoice();if(typeof room!=='string'||!/^brasa-[a-z0-9-]{1,50}$/.test(room))return;const channel=db.channels.find(c=>c.id===room.slice(6)&&c.type==='voice');if(!channel||!member(channel.guildId,user.id))return;const members=io.sockets.adapter.rooms.get(room);if(members&&members.size>=8){socket.emit('voice-error',{message:'A sala está cheia.'});return}const peers=[...(members||[])].map(peerId=>{const peerSocket=io.sockets.sockets.get(peerId);return {id:peerId,userId:peerSocket?.user?.id,name:peerSocket?.user?.displayName||'Participante',avatar:peerSocket?.user?.avatar||''}});voiceRoom=room;socket.join(room);socket.emit('voice-peers',peers);socket.to(room).emit('voice-peer-joined',{id:socket.id,userId:user.id,name:user.displayName,avatar:user.avatar||''});publishGuildVoiceRoster(channel.guildId)});
-  const leaveVoice=()=>{if(!voiceRoom)return;const room=voiceRoom,channel=db.channels.find(c=>c.id===room.slice(6));voiceRoom=null;socket.leave(room);socket.to(room).emit('voice-peer-left',{id:socket.id});if(channel)publishGuildVoiceRoster(channel.guildId)};
+  socket.on('voice-join',({room}={})=>{if(voiceRoom)leaveVoice();if(typeof room!=='string'||!/^brasa-[a-z0-9-]{1,50}$/.test(room))return;const channel=db.channels.find(c=>c.id===room.slice(6)&&c.type==='voice');if(!channel||!member(channel.guildId,user.id))return;const members=io.sockets.adapter.rooms.get(room);if(members&&members.size>=8){socket.emit('voice-error',{message:'A sala está cheia.'});return}const peers=[...(members||[])].map(peerId=>{const peerSocket=io.sockets.sockets.get(peerId);const peerUserId=peerSocket?.user?.id;return {id:peerId,userId:peerUserId,name:peerSocket?.user?.displayName||'Participante',avatar:peerSocket?.user?.avatar||'',videoMode:voiceVideoModes.get(peerUserId)||'none'}});voiceRoom=room;socket.join(room);socket.emit('voice-peers',peers);peers.filter(peer=>peer.videoMode==='screen').forEach(peer=>socket.emit('voice-video-mode',{userId:peer.userId,mode:'screen'}));socket.to(room).emit('voice-peer-joined',{id:socket.id,userId:user.id,name:user.displayName,avatar:user.avatar||'',videoMode:voiceVideoModes.get(user.id)||'none'});publishGuildVoiceRoster(channel.guildId)});
+  const leaveVoice=()=>{if(!voiceRoom)return;const room=voiceRoom,channel=db.channels.find(c=>c.id===room.slice(6));voiceRoom=null;voiceVideoModes.delete(user.id);socket.leave(room);socket.to(room).emit('voice-peer-left',{id:socket.id});if(channel)publishGuildVoiceRoster(channel.guildId)};
   socket.on('voice-leave',leaveVoice);
   socket.on('voice-signal',({to,data}={})=>{if(voiceRoom&&typeof to==='string'&&data&&io.sockets.adapter.rooms.get(voiceRoom)?.has(to))io.to(to).emit('voice-signal',{from:socket.id,data})});
   socket.on('disconnecting',()=>{if(voiceRoom)leaveVoice()});
