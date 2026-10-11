@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: brasa-chat
+    runtime: node
+    plan: free
+    rootDir: VermelhoChat
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production

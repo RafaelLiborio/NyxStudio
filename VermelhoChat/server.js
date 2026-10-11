@@ -9,7 +9,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { maxHttpBufferSize: 100_000 });
 const PORT = Number(process.env.PORT) || 3000;
-const DATA_FILE = path.join(__dirname, 'brasa-data.json');
+const DATA_FILE = process.env.BRASA_DATA_FILE || path.join(__dirname, 'brasa-data.json');
 const sessions = new Map();
 const online = new Map();
 
@@ -57,6 +57,7 @@ function cleanText(value, max = 2000) { return typeof value === 'string' ? value
 
 app.disable('x-powered-by');
 app.use(express.json({ limit: '32kb' }));
+app.get('/health', (_req, res) => res.json({ ok: true }));
 app.get('/', (_req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 app.get('/app.js', (_req, res) => res.sendFile(path.join(__dirname, 'app.js')));
 app.get('/style.css', (_req, res) => res.sendFile(path.join(__dirname, 'style.css')));

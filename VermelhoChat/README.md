@@ -14,6 +14,12 @@ npm start
 
 Abra `http://localhost:3000`, crie uma conta e depois clique no botão `+` à esquerda para criar uma comunidade. O primeiro usuário de uma comunidade é seu dono e pode criar canais e convites.
 
+## Publicar uma versão de teste
+
+O repositório inclui `render.yaml` na raiz para criar um serviço Node no Render. Envie o projeto para o GitHub e, no Render, escolha **New → Blueprint**, conecte o repositório `NyxStudio` e confirme a configuração. Ao terminar o deploy, compartilhe o endereço `https://...onrender.com` com seus amigos. Todos devem criar conta no mesmo endereço.
+
+O plano de teste definido no Blueprint usa o disco temporário do serviço: mensagens e contas podem ser apagadas quando a instância reiniciar ou for publicada novamente. Para chamadas, cada participante precisa liberar microfone/câmera no navegador; algumas redes exigem TURN, que ainda não está configurado.
+
 ## O que funciona
 
 - Contas com senha armazenada como hash e sessão por cookie.
