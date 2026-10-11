@@ -1,26 +1,142 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#bd263d">
-  <title>Brasa — comunidade</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/voice.css"><style>.nav-backdrop{display:none}.voice-person.has-video{background:#111;justify-content:flex-end}.voice-person.has-video video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.voice-person.has-video .avatar{display:none}.voice-person.has-video .voice-person-name{position:absolute;left:10px;bottom:28px;z-index:1;padding:4px 7px;border-radius:5px;background:#10101499}.voice-person.has-video .voice-person-state{display:none}.voice-person.has-video .voice-person-badge{z-index:1;background:#1119;border-radius:5px;padding:3px 6px}.voice-controls .voice-control-group{flex-wrap:wrap}@media(max-width:700px){.layout.menu-open .nav-backdrop{display:block;position:fixed;inset:0 0 0 56px;z-index:7;border:0;background:#05050799}.message-actions{display:flex}}@media(max-width:460px){.voice-controls{gap:6px;padding-inline:7px}.voice-count{display:none}.voice-control{min-width:43px}.voice-control-group{gap:4px}.end-call{min-width:56px}}</style>
-  <script src="/socket.io/socket.io.js" defer></script><script src="/app.js" defer></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#a91f36">
+  <meta name="description" content="Converse, jogue e faça chamadas com sua comunidade no Brasa.">
+  <title>Brasa — conversas da sua comunidade</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/voice.css">
+  <script src="/socket.io/socket.io.js" defer></script>
+  <script src="/app.js" defer></script>
 </head>
 <body>
-  <section class="auth-screen" id="authScreen"><div class="auth-card"><div class="brand-mark">B</div><p class="eyebrow">SUA COMUNIDADE, DO SEU JEITO</p><h1 id="authTitle">Entre no Brasa</h1><p class="muted" id="authSubtitle">Converse com seus amigos e comunidades.</p>
-    <form id="authForm"><label id="displayNameField" class="hidden">Como quer ser chamado?<input name="displayName" maxlength="32" autocomplete="nickname" placeholder="Nome de exibição"></label><label>Usuário<input name="username" minlength="3" maxlength="24" required autocomplete="username" placeholder="seuusuario"></label><label>Senha<input name="password" type="password" minlength="8" required autocomplete="current-password" placeholder="Mínimo de 8 caracteres"></label><button class="primary full" id="authSubmit">Entrar</button></form>
-    <p class="auth-switch"><span id="authSwitchText">Ainda não tem conta?</span> <button id="authSwitch" class="link-button">Criar conta</button></p><p class="form-error" id="authError"></p></div></section>
+  <section class="auth-screen" id="authScreen">
+    <div class="auth-card">
+      <div class="brand-lockup"><div class="brand-mark" aria-hidden="true">B</div><span>BRASA</span></div>
+      <p class="eyebrow">SUA COMUNIDADE, DO SEU JEITO</p>
+      <h1 id="authTitle">Entre no Brasa</h1>
+      <p class="muted" id="authSubtitle">Converse com seus amigos e comunidades.</p>
+      <form id="authForm">
+        <label id="displayNameField" class="hidden">Como quer ser chamado?
+          <input name="displayName" maxlength="32" autocomplete="nickname" placeholder="Nome de exibição">
+        </label>
+        <label>Usuário
+          <input name="username" minlength="3" maxlength="24" required autocomplete="username" placeholder="seuusuario">
+        </label>
+        <label>Senha
+          <input name="password" type="password" minlength="8" required autocomplete="current-password" placeholder="Mínimo de 8 caracteres">
+        </label>
+        <button class="primary full" id="authSubmit">Entrar</button>
+      </form>
+      <p class="auth-switch"><span id="authSwitchText">Ainda não tem conta?</span>
+        <button id="authSwitch" class="link-button" type="button">Criar conta</button>
+      </p>
+      <p class="form-error" id="authError" role="alert"></p>
+    </div>
+    <p class="auth-footnote">Um espaço para conversar, jogar e ficar por perto.</p>
+  </section>
+
   <div class="layout hidden" id="layout">
-    <nav class="guild-rail"><div class="rail-logo" title="Brasa">B</div><div class="rail-divider"></div><div id="guildRail" class="rail-list"></div><button class="rail-add" id="createGuild" title="Criar comunidade">＋</button></nav>
-    <aside class="sidebar"><header class="server-header"><div><strong id="guildName">Brasa</strong><small>COMUNIDADE</small></div><button class="ghost" id="inviteBtn" title="Criar convite">↗</button></header>
-      <div class="side-scroll"><form class="inline-action hidden" id="inlineAction"><strong id="inlineTitle"></strong><input id="inlineInput" maxlength="48" placeholder="Nome"><div><button type="button" class="inline-cancel" id="inlineCancel">Cancelar</button><button class="inline-submit">Criar</button></div><p class="form-error" id="inlineError"></p></form><button class="nav-item active" id="homeBtn"><span>◈</span> Início</button><div class="section-title"><span>CANAIS DE TEXTO</span><button id="createTextChannel" title="Criar canal">＋</button></div><div id="textChannels"></div><div class="section-title voice-heading"><span>CANAIS DE VOZ</span><button id="createVoiceChannel" title="Criar sala de voz">＋</button></div><div id="voiceChannels"></div>
-      <div class="section-title dm-heading"><span>MENSAGENS DIRETAS</span><button id="newDm" title="Nova conversa">＋</button></div><div id="dmList"></div></div>
-      <footer class="profile"><div class="avatar" id="myAvatar">?</div><div class="profile-name"><strong id="myName">Você</strong><small id="myHandle">online</small></div><button class="ghost" id="logoutBtn" title="Sair">⇥</button></footer>
-    </aside><button class="nav-backdrop" id="navBackdrop" aria-label="Fechar navegação"></button>
-    <main class="main-panel"><header class="channel-header"><button class="mobile-menu" id="mobileMenu" aria-label="Abrir navegação" aria-expanded="false">☰</button><span class="channel-symbol" id="channelSymbol">#</span><div class="channel-heading"><h2 id="conversationTitle">início</h2><p id="conversationTopic">Escolha uma comunidade ou comece uma conversa.</p></div><div class="header-actions"><button class="icon-action" id="searchToggle" title="Buscar mensagens" aria-label="Buscar mensagens">⌕</button><input class="search-input hidden" id="searchInput" placeholder="Buscar nesta conversa"><button class="icon-action" id="membersToggle" title="Membros" aria-label="Mostrar membros">♙</button></div></header>
-      <div class="workspace"><section class="message-pane"><div id="welcome" class="welcome"><div class="welcome-icon">✦</div><h1>Boas-vindas ao Brasa</h1><p>Crie um servidor para reunir sua comunidade ou entre em uma conversa direta.</p><button class="primary" id="welcomeCreate">Criar minha comunidade</button></div><div id="messages" class="messages hidden" aria-live="polite"></div><div class="typing-line" id="typingLine"></div><form id="composer" class="composer hidden"><button type="button" class="attach" title="Emojis e anexos">＋</button><textarea id="messageInput" rows="1" maxlength="2000" placeholder="Escreva uma mensagem..."></textarea><button class="send" aria-label="Enviar mensagem">➤</button></form></section>
-      <aside class="members-panel hidden" id="membersPanel"><div class="section-title"><span>MEMBROS</span></div><div id="memberList"></div></aside></div>
-      <section class="voice-stage hidden" id="voiceStage" aria-label="Chamada de voz"><header class="voice-stage-head"><div class="voice-room-mark">◖</div><div><p class="eyebrow">CHAMADA DE VOZ</p><h2 id="callTitle">Sala de voz</h2><span id="callStatus" class="voice-status"><i></i> Conectando...</span></div><button id="minimizeCall" class="stage-minimize" title="Voltar ao chat" aria-label="Voltar ao chat">⌄</button></header><div class="voice-grid-wrap"><div class="voice-grid" id="voiceGrid"></div></div><footer class="voice-controls"><div class="voice-control-group"><button id="muteBtn" class="voice-control" title="Silenciar microfone"><span>♩</span><small>Microfone</small></button><button id="deafenBtn" class="voice-control" title="Desativar áudio de entrada"><span>◖</span><small>Áudio</small></button><button id="videoBtn" class="voice-control" title="Ativar câmera"><span>▣</span><small>Câmera</small></button><button id="shareBtn" class="voice-control" title="Compartilhar tela"><span>▱</span><small>Tela</small></button></div><div id="callRoster" class="voice-count">1 participante</div><button id="leaveCall" class="end-call" title="Desconectar da sala"><span>⌕</span><small>Sair</small></button></footer></section>
-      <div id="toast" class="toast hidden"></div>
+    <nav class="guild-rail" aria-label="Comunidades">
+      <button class="rail-logo" id="homeLogo" title="Ir para o início" aria-label="Ir para o início">B</button>
+      <div class="rail-divider"></div>
+      <div id="guildRail" class="rail-list"></div>
+      <button class="rail-add" id="createGuild" title="Criar comunidade" aria-label="Criar comunidade">＋</button>
+    </nav>
+
+    <aside class="sidebar" aria-label="Navegação da comunidade">
+      <header class="server-header">
+        <div class="server-heading"><strong id="guildName">Brasa</strong><small>ESPAÇO DA COMUNIDADE</small></div>
+        <button class="ghost invite-button" id="inviteBtn" type="button" title="Compartilhar convite" aria-label="Compartilhar convite">↗</button>
+      </header>
+      <div class="side-scroll">
+        <form class="inline-action hidden" id="inlineAction">
+          <strong id="inlineTitle"></strong>
+          <input id="inlineInput" maxlength="48" placeholder="Nome">
+          <div><button type="button" class="inline-cancel" id="inlineCancel">Cancelar</button><button class="inline-submit">Criar</button></div>
+          <p class="form-error" id="inlineError" role="alert"></p>
+        </form>
+        <button class="nav-item active" id="homeBtn" type="button"><span aria-hidden="true">⌂</span>Início</button>
+        <div class="section-title"><span>CANAIS DE TEXTO</span><button id="createTextChannel" type="button" title="Criar canal de texto" aria-label="Criar canal de texto">＋</button></div>
+        <div id="textChannels"></div>
+        <div class="section-title voice-heading"><span>CANAIS DE VOZ</span><button id="createVoiceChannel" type="button" title="Criar sala de voz" aria-label="Criar sala de voz">＋</button></div>
+        <div id="voiceChannels"></div>
+        <div class="section-title dm-heading"><span>MENSAGENS DIRETAS</span><button id="newDm" type="button" title="Nova conversa" aria-label="Nova conversa">＋</button></div>
+        <div id="dmList"></div>
+      </div>
+      <footer class="profile">
+        <div class="avatar" id="myAvatar" aria-hidden="true">?</div>
+        <div class="profile-name"><strong id="myName">Você</strong><small id="myHandle">online</small></div>
+        <button class="ghost" id="logoutBtn" type="button" title="Sair da conta" aria-label="Sair da conta">⇥</button>
+      </footer>
+    </aside>
+    <button class="nav-backdrop" id="navBackdrop" aria-label="Fechar navegação"></button>
+
+    <main class="main-panel">
+      <header class="channel-header">
+        <button class="mobile-menu" id="mobileMenu" type="button" aria-label="Abrir navegação" aria-expanded="false">☰</button>
+        <span class="channel-symbol" id="channelSymbol" aria-hidden="true">◈</span>
+        <div class="channel-heading"><h2 id="conversationTitle">Início</h2><p id="conversationTopic">Escolha uma comunidade ou comece uma conversa.</p></div>
+        <div class="header-actions">
+          <button class="icon-action" id="searchToggle" type="button" title="Buscar mensagens" aria-label="Buscar mensagens" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.7"></circle><path d="m16 16 4.2 4.2"></path></svg></button>
+          <input class="search-input hidden" id="searchInput" placeholder="Buscar nesta conversa" aria-label="Buscar nesta conversa">
+          <button class="icon-action" id="membersToggle" type="button" title="Mostrar membros" aria-label="Mostrar membros" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.1"></circle><path d="M3.5 19v-1.2a5.5 5.5 0 0 1 11 0V19zM16 5.4a3.1 3.1 0 0 1 0 5.8M17.3 14a4.8 4.8 0 0 1 3.2 4.5v.5h-3.1"></path></svg></button>
+        </div>
+      </header>
+
+      <div class="workspace">
+        <section class="message-pane" aria-label="Conversa">
+          <div id="welcome" class="welcome">
+            <div class="welcome-icon" aria-hidden="true">✦</div>
+            <p class="eyebrow">BOM TER VOCÊ AQUI</p>
+            <h1>Boas-vindas ao Brasa</h1>
+            <p>Crie uma comunidade para reunir seus amigos, ou abra uma conversa direta.</p>
+            <button class="primary" id="welcomeCreate" type="button">Criar minha comunidade</button>
+          </div>
+          <div id="messages" class="messages hidden" aria-live="polite" aria-label="Mensagens"></div>
+          <p class="search-empty hidden" id="searchEmpty" role="status">Nenhuma mensagem encontrada.</p>
+          <div class="typing-line" id="typingLine" aria-live="polite"></div>
+          <form id="composer" class="composer hidden">
+            <button type="button" class="attach" id="emojiToggle" title="Inserir emoji" aria-label="Inserir emoji" aria-expanded="false">☺</button>
+            <textarea id="messageInput" rows="1" maxlength="2000" placeholder="Escreva uma mensagem…" aria-label="Escreva uma mensagem"></textarea>
+            <button class="send" type="submit" aria-label="Enviar mensagem" title="Enviar mensagem">➤</button>
+          </form>
+          <div class="emoji-popover hidden" id="composerEmojiPicker" role="group" aria-label="Escolha um emoji"></div>
+        </section>
+        <aside class="members-panel hidden" id="membersPanel" aria-label="Membros da comunidade">
+          <div class="members-heading"><strong>Membros</strong><span id="memberCount">0</span></div>
+          <div id="memberList"></div>
+        </aside>
+      </div>
+
+      <section class="voice-stage hidden" id="voiceStage" aria-label="Chamada de voz">
+        <header class="voice-stage-head">
+          <div class="voice-room-mark" aria-hidden="true">◖</div>
+          <div><p class="eyebrow">CHAMADA DE VOZ</p><h2 id="callTitle">Sala de voz</h2><span id="callStatus" class="voice-status" aria-live="polite"><i></i>Conectando…</span></div>
+          <button id="minimizeCall" class="stage-minimize" type="button" title="Minimizar chamada" aria-label="Minimizar chamada">⌄</button>
+        </header>
+        <div class="voice-grid-wrap"><div class="voice-grid" id="voiceGrid"></div></div>
+        <footer class="voice-controls">
+          <div class="voice-control-group">
+            <button id="muteBtn" class="voice-control" type="button" title="Silenciar microfone" aria-pressed="false"><span aria-hidden="true">♩</span><small>Microfone</small></button>
+            <button id="deafenBtn" class="voice-control" type="button" title="Desativar seu áudio" aria-pressed="false"><span aria-hidden="true">◖</span><small>Áudio</small></button>
+            <button id="videoBtn" class="voice-control" type="button" title="Ativar câmera" aria-pressed="false"><span aria-hidden="true">▣</span><small>Câmera</small></button>
+            <button id="shareBtn" class="voice-control" type="button" title="Compartilhar tela" aria-pressed="false"><span aria-hidden="true">▱</span><small>Tela</small></button>
+          </div>
+          <div id="callRoster" class="voice-count" aria-live="polite">1 participante</div>
+          <button id="leaveCall" class="end-call" type="button" title="Sair da chamada"><span aria-hidden="true">×</span><small>Sair</small></button>
+        </footer>
+      </section>
+
+      <footer class="call-dock hidden" id="callDock" aria-label="Chamada minimizada">
+        <span class="pulse" aria-hidden="true"></span>
+        <div class="call-info"><strong id="callDockTitle">Chamada em andamento</strong><small id="callDockCount">1 participante</small></div>
+        <button class="call-button" id="restoreCall" type="button">Voltar à chamada</button>
+        <button class="call-leave" id="dockLeaveCall" type="button">Sair</button>
+      </footer>
+      <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
     </main>
   </div>
 </body>

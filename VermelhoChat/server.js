@@ -127,22 +127,22 @@ app.post('/api/logout', (req, res) => { sessions.delete(cookie(req, 'brasa_sessi
 
 app.get('/api/guilds', auth, (req, res) => res.json(db.guilds.filter(g => member(g.id, req.user.id)).map(g => ({ id:g.id,name:g.name,icon:g.icon,role:member(g.id,req.user.id).role,channels:db.channels.filter(c=>c.guildId===g.id) }))));
 app.post('/api/guilds', auth, async (req, res) => {
-  const name = cleanText(req.body.name, 48); if (name.length < 2) return replyError(res, 'O nome do servidor precisa ter ao menos 2 caracteres.');
+  const name = cleanText(req.body.name, 48); if (name.length < 2) return replyError(res, 'O nome da comunidade precisa ter ao menos 2 caracteres.');
   const guild = { id:id(), name, icon:name.slice(0,1).toUpperCase(), ownerId:req.user.id, members:[{ userId:req.user.id, role:'owner', joinedAt:Date.now() }] };
   db.guilds.push(guild); const channel={id:id(),guildId:guild.id,name:'geral',type:'text',topic:'Conversa da comunidade.'}; db.channels.push(channel); await save();
   res.json({ id:guild.id,name:guild.name,icon:guild.icon,role:'owner',channels:[channel] });
 });
 app.get('/api/guilds/:id/members', auth, (req,res)=>{
-  const g=db.guilds.find(x=>x.id===req.params.id); if(!g||!member(g.id,req.user.id))return replyError(res,'Servidor não encontrado.',404);
+  const g=db.guilds.find(x=>x.id===req.params.id); if(!g||!member(g.id,req.user.id))return replyError(res,'Comunidade não encontrada.',404);
   res.json(g.members.map(m=>({...publicUser(db.users.find(u=>u.id===m.userId)),role:m.role,state:online.has(m.userId)?'online':'offline'})).filter(u=>u.id));
 });
 app.post('/api/guilds/:id/channels', auth, async (req,res)=>{
-  if(!canManage(req.params.id,req.user.id))return replyError(res,'Somente administradores podem criar canais.',403);
+  if(!canManage(req.params.id,req.user.id))return replyError(res,'Somente quem administra esta comunidade pode criar canais.',403);
   const name=cleanText(req.body.name,32).toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9_-]/g,''); if(name.length<2)return replyError(res,'Nome de canal inválido.');
   const type=req.body.type==='voice'?'voice':'text'; const channel={id:id(),guildId:req.params.id,name,type,topic:cleanText(req.body.topic,120)};db.channels.push(channel);await save();res.json(channel);
 });
 app.post('/api/guilds/:id/invites', auth, async (req,res)=>{
-  if(!member(req.params.id,req.user.id))return replyError(res,'Você não faz parte deste servidor.',403);
+  if(!member(req.params.id,req.user.id))return replyError(res,'Você não faz parte desta comunidade.',403);
   const invite={code:token().slice(0,10),guildId:req.params.id,createdBy:req.user.id,expiresAt:Date.now()+7*86400000};db.invites.push(invite);await save();res.json({code:invite.code});
 });
 app.post('/api/invites/:code/join', auth, async (req,res)=>{
