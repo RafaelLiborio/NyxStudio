@@ -21,3 +21,10 @@
 .end-call:hover{background:#ed4a60;border-color:#ff7b89}
 .voice-count{color:#bcb6c0}
 @media(max-width:700px){.voice-stage-head{padding:12px 14px}.voice-controls .voice-control-group{flex-wrap:wrap}.voice-count{display:none}}
+.voice-stage{inset:68px 0 0;background:radial-gradient(ellipse at 50% 35%,#3a252c 0,#313338 58%)}
+.voice-stage-head h2{font-size:19px}.voice-stage-head .eyebrow{font-size:11px}.voice-status{font-size:13px}
+.voice-person-name{font-size:15px}.voice-person-state{font-size:12px}.voice-person-badge{font-size:12px}.voice-person-badge .mic-state{font-size:15px}.voice-person .you-tag{font-size:10px}
+.voice-control small,.end-call small{font-size:11px}.voice-count{font-size:13px;min-width:110px}
+.voice-control,.end-call{min-width:72px;height:62px}.end-call{min-width:80px}
+@media(max-width:700px){.voice-stage{inset:62px 0 0}.voice-stage-head h2{font-size:17px}.voice-person-name{font-size:14px}.voice-person-state{font-size:11px}.voice-controls{gap:8px}.voice-control,.end-call{min-width:52px}.voice-control small,.end-call small{font-size:10px}}
+@media(max-width:460px){.voice-stage{inset:58px 0 0}.voice-stage-head{padding:10px 12px}.voice-controls{padding-inline:7px}.voice-control,.end-call{min-width:44px}.voice-control-group{gap:4px}.voice-count{font-size:11px}}

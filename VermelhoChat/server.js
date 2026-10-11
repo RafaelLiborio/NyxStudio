@@ -237,18 +237,34 @@ app.post('/api/dms',auth,async(req,res)=>{const other=db.users.find(u=>u.id===re
 app.get('/api/dms/:id/messages',auth,(req,res)=>{const dm=db.dms.find(d=>d.id===req.params.id&&d.userIds.includes(req.user.id));if(!dm)return replyError(res,'Conversa não encontrada.',404);res.json(db.dmMessages.filter(m=>m.dmId===dm.id).slice(-100).map(m=>({...m,user:publicUser(db.users.find(u=>u.id===m.userId))})))});
 app.post('/api/dms/:id/messages',auth,async(req,res)=>{const dm=db.dms.find(d=>d.id===req.params.id&&d.userIds.includes(req.user.id));if(!dm)return replyError(res,'Conversa não encontrada.',404);const text=cleanText(req.body.text);if(!text)return replyError(res,'A mensagem está vazia.');const m={id:id(),dmId:dm.id,userId:req.user.id,text,createdAt:Date.now()};db.dmMessages.push(m);await save();const result={...m,user:publicUser(req.user)};io.to(`dm:${dm.id}`).emit('dm:new',result);res.json(result)});
 
+function getGuildVoiceRoster(guildId) {
+  return db.channels.filter(c => c.guildId === guildId && c.type === 'voice').map(channel => {
+    const sockets = io.sockets.adapter.rooms.get(`brasa-${channel.id}`) || new Set();
+    const uniqueUsers = new Map();
+    for (const socketId of sockets) {
+      const user = io.sockets.sockets.get(socketId)?.user;
+      if (user && member(guildId, user.id)) uniqueUsers.set(user.id, publicUser(user));
+    }
+    return { channelId: channel.id, participants: [...uniqueUsers.values()] };
+  }).filter(channel => channel.participants.length);
+}
+function publishGuildVoiceRoster(guildId) {
+  io.to(`guild:${guildId}`).emit('guild:voice-roster', { guildId, channels: getGuildVoiceRoster(guildId) });
+}
+
 const parseSocketSession = socket => { const sid=(socket.handshake.headers.cookie||'').split(';').map(x=>x.trim()).find(x=>x.startsWith('brasa_session='))?.slice('brasa_session='.length);return sid&&sessions.get(sid); };
 io.use((socket,next)=>{const s=parseSocketSession(socket);const user=s&&db.users.find(u=>u.id===s.userId);if(!user)return next(new Error('Faça login para conectar.'));socket.user=user;next()});
 io.on('connection',socket=>{
   const user=socket.user;let voiceRoom=null;socket.join(`user:${user.id}`);emitPresence(user.id,'online');
+  socket.on('subscribe:guild',guildId=>{const guild=db.guilds.find(g=>g.id===guildId);if(!guild||!member(guildId,user.id))return;socket.join(`guild:${guildId}`);socket.emit('guild:voice-roster',{guildId,channels:getGuildVoiceRoster(guildId)})});
   socket.on('subscribe:channel',channelId=>{const c=db.channels.find(x=>x.id===channelId);if(c&&member(c.guildId,user.id))socket.join(`channel:${c.id}`)});
   socket.on('subscribe:dm',dmId=>{const d=db.dms.find(x=>x.id===dmId&&x.userIds.includes(user.id));if(d)socket.join(`dm:${d.id}`)});
   socket.on('typing',({channelId,dmId}={})=>{if(channelId){const c=db.channels.find(x=>x.id===channelId);if(c&&member(c.guildId,user.id))socket.to(`channel:${c.id}`).emit('typing',{user:publicUser(user),channelId})}else if(dmId){const d=db.dms.find(x=>x.id===dmId&&x.userIds.includes(user.id));if(d)socket.to(`dm:${d.id}`).emit('typing',{user:publicUser(user),dmId})}});
-  socket.on('voice-join',({room}={})=>{if(voiceRoom)leaveVoice();if(typeof room!=='string'||!/^brasa-[a-z0-9-]{1,50}$/.test(room))return;const channel=db.channels.find(c=>c.id===room.slice(6)&&c.type==='voice');if(!channel||!member(channel.guildId,user.id))return;const members=io.sockets.adapter.rooms.get(room);if(members&&members.size>=8){socket.emit('voice-error',{message:'A sala está cheia.'});return}const peers=[...(members||[])].map(peerId=>{const peerSocket=io.sockets.sockets.get(peerId);return {id:peerId,userId:peerSocket?.user?.id,name:peerSocket?.user?.displayName||'Participante',avatar:peerSocket?.user?.avatar||''}});voiceRoom=room;socket.join(room);socket.emit('voice-peers',peers);socket.to(room).emit('voice-peer-joined',{id:socket.id,userId:user.id,name:user.displayName,avatar:user.avatar||''})});
-  const leaveVoice=()=>{if(!voiceRoom)return;const room=voiceRoom;voiceRoom=null;socket.leave(room);socket.to(room).emit('voice-peer-left',{id:socket.id})};
+  socket.on('voice-join',({room}={})=>{if(voiceRoom)leaveVoice();if(typeof room!=='string'||!/^brasa-[a-z0-9-]{1,50}$/.test(room))return;const channel=db.channels.find(c=>c.id===room.slice(6)&&c.type==='voice');if(!channel||!member(channel.guildId,user.id))return;const members=io.sockets.adapter.rooms.get(room);if(members&&members.size>=8){socket.emit('voice-error',{message:'A sala está cheia.'});return}const peers=[...(members||[])].map(peerId=>{const peerSocket=io.sockets.sockets.get(peerId);return {id:peerId,userId:peerSocket?.user?.id,name:peerSocket?.user?.displayName||'Participante',avatar:peerSocket?.user?.avatar||''}});voiceRoom=room;socket.join(room);socket.emit('voice-peers',peers);socket.to(room).emit('voice-peer-joined',{id:socket.id,userId:user.id,name:user.displayName,avatar:user.avatar||''});publishGuildVoiceRoster(channel.guildId)});
+  const leaveVoice=()=>{if(!voiceRoom)return;const room=voiceRoom,channel=db.channels.find(c=>c.id===room.slice(6));voiceRoom=null;socket.leave(room);socket.to(room).emit('voice-peer-left',{id:socket.id});if(channel)publishGuildVoiceRoster(channel.guildId)};
   socket.on('voice-leave',leaveVoice);
   socket.on('voice-signal',({to,data}={})=>{if(voiceRoom&&typeof to==='string'&&data&&io.sockets.adapter.rooms.get(voiceRoom)?.has(to))io.to(to).emit('voice-signal',{from:socket.id,data})});
-  socket.on('disconnecting',()=>{if(voiceRoom)socket.to(voiceRoom).emit('voice-peer-left',{id:socket.id})});
+  socket.on('disconnecting',()=>{if(voiceRoom)leaveVoice()});
   socket.on('disconnect',()=>emitPresence(user.id,'offline'));
 });
 

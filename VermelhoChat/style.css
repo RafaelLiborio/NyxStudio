@@ -135,3 +135,104 @@ button,select,input,textarea{font:inherit}button{transition:background-color .14
 .profile-dialog{width:min(440px,calc(100vw - 28px));max-height:min(90dvh,780px);padding:0;overflow:auto;border:1px solid var(--border);border-radius:16px;background:var(--card);color:var(--card-foreground);box-shadow:0 26px 100px #000a}.profile-dialog::backdrop{background:#09090bb8;backdrop-filter:blur(5px)}.profile-dialog form{display:grid;gap:13px;padding:24px}.profile-dialog header,.profile-dialog footer{display:flex;align-items:center;justify-content:space-between;gap:12px}.profile-dialog header{margin-bottom:2px}.profile-dialog h2{margin:0;font-size:20px;letter-spacing:-.03em}.profile-dialog .eyebrow{margin:0 0 5px;color:#e87987}.profile-dialog label{display:grid;gap:6px;color:#d8d3da;font-size:11px;font-weight:650}.profile-dialog input:not([type=file]){width:100%;min-height:38px;padding:9px 11px;border:1px solid var(--input);border-radius:8px;background:#17171b;color:var(--foreground);font-size:12px}.profile-dialog input[type=file]{max-width:100%;color:var(--muted-foreground);font-size:10px}.profile-dialog hr{width:100%;height:1px;border:0;background:var(--border)}.profile-dialog .muted{margin:0;color:var(--muted-foreground);font-size:11px;line-height:1.5}.profile-dialog footer{justify-content:flex-end;margin-top:4px}.profile-photo-preview{display:grid;place-items:center;width:76px;height:76px;overflow:hidden;border:1px dashed #65505a;border-radius:50%;background:#302830;color:#e7a4ae;font-size:9px}.profile-photo-preview img{width:100%;height:100%;object-fit:cover}.profile-dialog .form-error{min-height:14px;margin:0;color:#ff8896;font-size:11px}
 .screen-quality-label{display:flex;align-items:center;gap:6px;padding:0 8px;color:#c8c1ca;font-size:10px}.screen-quality-label select{max-width:88px;min-height:34px;padding:5px 8px;border:1px solid var(--border);border-radius:8px;background:var(--secondary);color:var(--foreground);font-size:10px}.voice-count{max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media(max-width:700px){.friend-row{padding-inline:7px}.friend-actions button{min-width:27px}.profile-dialog form{padding:20px}.voice-controls{flex-wrap:wrap}.screen-quality-label{order:5}}
+
+/* Discord-inspired density with a larger, readable type scale. */
+:root{--discord-base:#313338;--discord-sidebar:#2b2d31;--discord-rail:#1e1f22;--discord-hover:#35373c;--discord-active:#404249;--discord-muted:#b5bac1}
+.layout{grid-template-columns:72px 264px minmax(0,1fr)}
+.guild-rail{background:var(--discord-rail);border-color:#17181a;gap:13px;padding-top:18px}
+.rail-logo,.guild-icon,.rail-add{width:48px;height:48px;border-radius:50%;font-size:18px}
+.guild-icon{position:relative}.guild-icon:hover,.guild-icon.active{border-radius:17px}
+.guild-icon.active:before{left:-12px;top:14px;height:20px}
+.rail-add{font-size:27px}
+.sidebar{background:var(--discord-sidebar);border-color:#232428}
+.server-header{height:68px;padding:0 17px;box-shadow:0 1px 3px #1115}
+.server-header strong{font-size:16px}.server-header small{font-size:10px;letter-spacing:.1em}
+.side-scroll{padding:14px 10px}
+.nav-item,.channel-link{font-size:14px;gap:11px;border-radius:7px}
+.nav-item{min-height:42px;margin-bottom:23px;padding:9px 12px}
+.nav-item span{font-size:19px}
+.nav-item:hover,.channel-link:hover{background:var(--discord-hover)}
+.nav-item.active,.channel-link.active{background:var(--discord-active);box-shadow:none}
+.channel-link{min-height:38px;padding:7px 11px;margin:2px 0}
+.channel-link .symbol{font-size:18px}
+.section-title{font-size:11px;letter-spacing:.08em;margin:19px 0 7px}
+.section-title button{width:28px;height:28px;font-size:20px}
+.dm-heading{margin-top:26px}
+.profile{height:74px;background:#232428;padding-inline:12px}
+.profile .avatar{width:40px;height:40px}
+.profile-name strong{font-size:14px}.profile-name small{font-size:12px}
+.main-panel{background:var(--discord-base)}
+.channel-header{height:68px;padding-inline:24px;background:#313338;border-color:#27282c;box-shadow:0 1px 3px #1114}
+.channel-symbol{font-size:24px;color:#b5bac1}
+.channel-heading h2{font-size:16px;margin-bottom:4px}
+.channel-heading p{font-size:12px;color:#b5bac1}
+.icon-action{width:38px;height:38px;font-size:21px}
+.search-input{font-size:14px;min-height:38px}
+.workspace{background:#313338}
+.welcome h1{font-size:30px}.welcome p:not(.eyebrow){font-size:15px}
+.welcome .eyebrow{font-size:11px}
+.primary,.secondary{font-size:14px;padding:11px 17px}
+.messages{padding-top:26px}
+.message{gap:13px;padding:10px 12px;margin:1px -12px;border-radius:7px}
+.message .avatar{width:42px;height:42px}
+.message-head{gap:9px;margin-bottom:6px}
+.message-head strong{font-size:14px}
+.message-head time{font-size:11px}
+.message-head .edited{font-size:10px}
+.message-content p{font-size:15px;line-height:1.62;color:#dbdee1}
+.message-actions button{min-height:30px;font-size:12px;padding:5px 8px}
+.reaction{font-size:13px;padding:4px 9px}
+.typing-line{height:22px;font-size:12px;padding-inline:27px}
+.composer{min-height:58px;margin-bottom:24px;border-radius:9px;background:#383a40}
+.composer textarea{font-size:15px;padding:17px 2px}
+.composer button{width:38px;height:38px;font-size:21px}
+.members-panel{width:248px;background:#2b2d31;border-color:#26272b;padding:14px 11px}
+.members-heading{font-size:14px}.members-heading span{font-size:12px;min-width:25px}
+.member-group{font-size:11px;padding:17px 8px 7px}
+.member-item{min-height:48px;gap:11px;padding:8px}
+.member-item .avatar{width:38px;height:38px}
+.member-label{font-size:14px}.member-label small{font-size:12px}
+.toast{font-size:14px;padding:12px 16px}
+.friend-empty{font-size:12px}.friend-row{min-height:44px;gap:9px;padding:6px}
+.friend-avatar .avatar{width:36px;height:36px}
+.friend-label strong{font-size:12px}.friend-label small{font-size:11px}
+.friend-actions button{min-height:30px;font-size:11px}
+.auth-card label,.modal-card label{font-size:14px}
+.auth-card input,.modal-card input{min-height:44px;font-size:14px}
+.auth-card>.muted{font-size:15px}
+.auth-switch{font-size:14px}
+.profile-dialog form{gap:15px}.profile-dialog label{font-size:13px}
+.profile-dialog input:not([type=file]){min-height:42px;font-size:14px}
+.profile-dialog .muted{font-size:13px}
+.screen-quality-label{font-size:12px}.screen-quality-label select{min-height:38px;font-size:12px}
+@media(max-width:1100px){.layout{grid-template-columns:64px 242px minmax(0,1fr)}.members-panel{width:218px}.channel-header{padding-inline:18px}}
+@media(max-width:900px){.layout{grid-template-columns:60px 232px minmax(0,1fr)}.members-panel{width:205px}.channel-header{padding-inline:15px}}
+@media(max-width:700px){
+  .layout{grid-template-columns:56px minmax(0,1fr)}
+  .guild-rail{padding-top:12px}.rail-logo,.guild-icon,.rail-add{width:42px;height:42px}
+  .sidebar{width:min(286px,calc(100vw - 56px))}
+  .server-header,.channel-header{height:62px}
+  .channel-header{padding-inline:12px;gap:9px}
+  .channel-heading h2{font-size:15px}.channel-heading p{display:block;font-size:11px}
+  .members-panel{top:62px;width:min(250px,82vw)}
+  .messages{padding:18px 15px 12px}
+  .message-content p{font-size:14px;line-height:1.58}
+  .message-head strong{font-size:13px}.message-head time{font-size:10px}
+  .composer{min-height:54px;margin:0 12px 15px}.composer textarea{font-size:14px;padding:15px 1px}
+  .welcome h1{font-size:25px}.welcome p:not(.eyebrow){font-size:14px}
+  .search-input{top:67px;width:min(250px,calc(100vw - 90px));font-size:13px}
+  .profile-dialog{max-height:86dvh}
+}
+@media(max-width:460px){
+  .channel-header{height:58px;padding-inline:9px;gap:7px}.channel-heading h2{font-size:14px}.channel-heading p{font-size:10px}
+  .channel-symbol{width:20px;font-size:19px}.icon-action{width:33px;height:33px}
+  .messages{padding:15px 12px 10px}.message{gap:9px;padding:8px 5px;margin-inline:-5px}
+  .message .avatar{width:36px;height:36px}.message-head{gap:6px}.message-head strong{font-size:12px}.message-head time{font-size:9px}
+  .message-content p{font-size:14px}.message-actions{gap:2px}.message-actions button{font-size:10px;padding:4px 5px}
+  .composer{margin-inline:8px}.composer button{width:33px;height:33px}
+  .voice-controls{gap:6px}.voice-controls .voice-control-group{gap:4px}.screen-quality-label{font-size:11px}
+  .screen-quality-label select{max-width:75px;padding:4px 5px}
+}
+@media(max-width:360px){.channel-heading p{display:none}.header-actions{gap:0}.icon-action{width:30px}.message .avatar{width:32px;height:32px}.message-actions button{font-size:9px}.screen-quality-label{gap:3px;padding-inline:3px}}
+.channel-entry,.voice-channel-entry{min-width:0}.channel-link{position:relative;padding-left:12px}.channel-link.active{background:#404249;color:#fff;box-shadow:none}.channel-link.active .symbol{color:#f08b98}.channel-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.voice-channel-people{display:flex;align-items:center;min-height:31px;margin:1px 0 6px 38px;padding:2px 0 4px 4px}.voice-channel-avatar,.voice-channel-more{position:relative;display:grid;place-items:center;width:25px;height:25px;flex:none;margin-left:-5px;overflow:hidden;border:2px solid #2b2d31;border-radius:50%;background:#6a3944;color:#fff;font-size:9px;font-weight:750}.voice-channel-avatar:first-child{margin-left:0}.voice-channel-avatar img{width:100%;height:100%;object-fit:cover}.voice-channel-avatar:hover{z-index:2;transform:translateY(-2px)}.voice-channel-more{background:#3b3d43;color:#d9dbe0;font-size:8px}.voice-channel-entry .channel-link.active~.voice-channel-people .voice-channel-avatar{border-color:#404249}
