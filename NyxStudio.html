@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NyxStudio | Conversão de jogos de console para PC</title>
+<meta name="description" content="O NyxStudio converte jogos de PlayStation, Xbox e Nintendo Switch para PC, com licença dos detentores dos direitos e engenharia feita para o computador.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%230A0820'/%3E%3Cpath fill='%23FFD98A' fill-rule='evenodd' d='M32 8a24 24 0 1 0 0 48a24 24 0 0 0 0-48zm9 6a20 20 0 0 1 0 36a24 24 0 0 0 0-36z'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script>
+try { var s = localStorage.getItem('nyx-theme'); if (s === 'light' || s === 'dark') document.documentElement.setAttribute('data-theme', s); } catch (e) {}
+</script>
+<style>
+:root {
+  --pad: clamp(20px, 4.2vw, 56px);
+  --maxw: 1240px;
+  --nav-h: 72px;
+  --pxclip: polygon(6px 0, calc(100% - 6px) 0, calc(100% - 6px) 3px, calc(100% - 3px) 3px, calc(100% - 3px) 6px, 100% 6px, 100% calc(100% - 6px), calc(100% - 3px) calc(100% - 6px), calc(100% - 3px) calc(100% - 3px), calc(100% - 6px) calc(100% - 3px), calc(100% - 6px) 100%, 6px 100%, 6px calc(100% - 3px), 3px calc(100% - 3px), 3px calc(100% - 6px), 0 calc(100% - 6px), 0 6px, 3px 6px, 3px 3px, 6px 3px);
+  --term: #0B0928;
+  --term-ink: #DCD7FF;
+  --night: #07061A;
+  --moon: #F1EEFF;
+  --gold: #FFD98A;
+
+  color-scheme: light;
+  --bg: #F6F4FF;
+  --bg-2: #ECE8FF;
+  --surface: #FFFFFF;
+  --ink: #16123F;
+  --ink-2: #4A4578;
+  --line: rgba(22, 18, 63, .16);
+  --accent: #5836EE;
+  --accent-ink: #FFFFFF;
+  --glass: rgba(246, 244, 255, .86);
+  --focus: #5836EE;
+  --danger: #B3261E;
+
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0A0820;
+    --bg-2: #141040;
+    --surface: #16114A;
+    --ink: #F1EEFF;
+    --ink-2: #B6B1DE;
+    --line: rgba(241, 238, 255, .16);
+    --accent: #9078FF;
+    --accent-ink: #0A0820;
+    --glass: rgba(10, 8, 32, .84);
+    --focus: #FFD98A;
+    --danger: #FF8A80;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0A0820;
+  --bg-2: #141040;
+  --surface: #16114A;
+  --ink: #F1EEFF;
+  --ink-2: #B6B1DE;
+  --line: rgba(241, 238, 255, .16);
+  --accent: #9078FF;
+  --accent-ink: #0A0820;
+  --glass: rgba(10, 8, 32, .84);
+  --focus: #FFD98A;
+  --danger: #FF8A80;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--nav-h) + env(safe-area-inset-top, 0px));
+  background: var(--bg);
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  font-variation-settings: "opsz" 14, "wdth" 100;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+h1, h2, h3, p, ul, ol, dl, dd, figure { margin: 0; }
+ul, ol { padding: 0; list-style: none; }
+button, input, textarea { font: inherit; color: inherit; }
+a { color: inherit; }
+img, svg, canvas { display: block; max-width: 100%; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.skip { position: fixed; left: 12px; top: -80px; z-index: 100; background: var(--accent); color: var(--accent-ink); padding: 10px 16px; text-decoration: none; font-weight: 600; }
+.skip:focus { top: calc(12px + env(safe-area-inset-top, 0px)); }
+
+.wrap { width: 100%; max-width: var(--maxw); margin: 0 auto; padding-inline: var(--pad); }
+.sec { padding-block: clamp(72px, 11vw, 150px); }
+
+h2 {
+  font-size: clamp(2.1rem, 5vw, 4rem);
+  font-weight: 700;
+  font-variation-settings: "opsz" 96, "wdth" 80;
+  letter-spacing: -0.018em;
+  line-height: 1.02;
+  max-width: 17em;
+}
+.lead { margin-top: 20px; max-width: 56ch; color: var(--ink-2); font-size: clamp(1.05rem, 1.5vw, 1.2rem); }
+.sec-head { margin-bottom: clamp(32px, 5vw, 60px); }
+
+/* Pixel-corner primitives */
+.pxl-box { position: relative; isolation: isolate; clip-path: var(--pxclip); }
+.pxl-box::before, .pxl-box::after { content: ""; position: absolute; z-index: -1; clip-path: var(--pxclip); }
+.pxl-box::before { inset: 0; background: var(--line); }
+.pxl-box::after { inset: 1px; background: var(--surface); }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 15px 26px; border: 0; cursor: pointer; text-decoration: none;
+  font-weight: 650; font-variation-settings: "opsz" 14, "wdth" 92; font-size: 1rem; line-height: 1.1;
+  clip-path: var(--pxclip);
+  transition: transform .15s ease, background-color .2s ease;
+}
+.btn:hover { transform: translateY(-2px); }
+.btn:active { transform: translateY(1px); }
+.btn:focus-visible { outline-offset: -5px; }
+.btn-primary { background: var(--accent); color: var(--accent-ink); }
+.btn-primary:hover { background: color-mix(in srgb, var(--accent) 88%, #fff); }
+.btn-soft { background: var(--bg-2); color: var(--ink); }
+.btn-ghost { background: rgba(241, 238, 255, .14); color: var(--moon); }
+.btn-ghost:hover { background: rgba(241, 238, 255, .24); }
+.btn-sm { padding: 11px 18px; font-size: .95rem; }
+
+/* Navigation */
+.nav {
+  --n-ink: var(--moon);
+  position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+  padding-top: env(safe-area-inset-top, 0px);
+  color: var(--n-ink);
+  transition: background-color .3s ease, color .3s ease;
+}
+.nav.is-solid {
+  --n-ink: var(--ink);
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  backdrop-filter: blur(14px) saturate(1.3);
+  box-shadow: 0 1px 0 var(--line);
+}
+.nav-inner {
+  display: flex; align-items: center; gap: 28px;
+  max-width: var(--maxw); margin: 0 auto; padding: 0 var(--pad); height: var(--nav-h);
+}
+.brand { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; font-weight: 750; font-size: 1.28rem; font-variation-settings: "opsz" 40, "wdth" 82; letter-spacing: -.01em; }
+.brand svg { width: 34px; height: 34px; flex: none; }
+.links { display: flex; gap: 26px; margin-left: auto; }
+.links a { text-decoration: none; font-weight: 550; font-size: .98rem; padding: 6px 0; border-bottom: 2px solid transparent; opacity: .86; transition: opacity .2s, border-color .2s; }
+.links a:hover { opacity: 1; }
+.links a[aria-current="true"] { opacity: 1; border-color: currentColor; }
+.nav-actions { display: flex; align-items: center; gap: 10px; }
+.icon-btn { width: 42px; height: 42px; display: grid; place-items: center; border: 0; background: transparent; color: inherit; cursor: pointer; border-radius: 50%; transition: background-color .2s; }
+.icon-btn:hover { background: color-mix(in srgb, currentColor 14%, transparent); }
+.icon-btn svg { width: 22px; height: 22px; }
+.i-sun { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .i-sun { display: block; }
+  :root:not([data-theme="light"]) .i-moon { display: none; }
+}
+:root[data-theme="dark"] .i-sun { display: block; }
+:root[data-theme="dark"] .i-moon { display: none; }
+.menu-btn { display: none; }
+.mobile-menu { display: none; }
+@media (max-width: 860px) {
+  .links { display: none; }
+  .nav-actions { margin-left: auto; }
+  .menu-btn { display: grid; }
+  .nav-actions .btn-sm { display: none; }
+  .mobile-menu:not([hidden]) {
+    display: grid; gap: 4px; padding: 8px var(--pad) 22px;
+    background: var(--glass); color: var(--ink);
+    -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+    box-shadow: 0 1px 0 var(--line);
+  }
+  .mobile-menu a { text-decoration: none; padding: 14px 0; font-size: 1.2rem; font-weight: 600; border-bottom: 1px solid var(--line); }
+  .mobile-menu .btn { margin-top: 14px; border-bottom: 0; color: var(--accent-ink); }
+}
+
+/* Hero */
+.hero {
+  position: relative; isolation: isolate; overflow: hidden;
+  min-height: 100svh; min-height: max(660px, 100svh);
+  display: flex; align-items: flex-end;
+  background: var(--night); color: var(--moon);
+}
+.hero canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -2; touch-action: pan-y; }
+.hero::after { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(to top, rgba(7, 6, 26, .88) 0%, rgba(7, 6, 26, .55) 30%, rgba(7, 6, 26, 0) 60%); }
+.hero-inner { position: relative; width: 100%; max-width: var(--maxw); margin: 0 auto; padding: 120px var(--pad) clamp(84px, 13vh, 140px); }
+.display {
+  font-size: clamp(2.4rem, 6.2vw, 5.4rem);
+  font-weight: 800;
+  font-variation-settings: "opsz" 96, "wdth" 75;
+  letter-spacing: -0.022em;
+  line-height: .98;
+}
+.display span { display: block; }
+.h1-a { color: rgba(241, 238, 255, .5); }
+.hero-sub { margin-top: 28px; max-width: 54ch; font-size: clamp(1.05rem, 1.6vw, 1.25rem); color: rgba(241, 238, 255, .82); }
+.hero-cta { margin-top: 34px; display: flex; flex-wrap: wrap; gap: 12px; }
+.legend { margin-top: 38px; display: flex; flex-wrap: wrap; gap: 10px 32px; font-size: .92rem; color: rgba(241, 238, 255, .78); }
+.legend li { display: inline-flex; align-items: center; gap: 10px; }
+.legend svg { width: 18px; height: 18px; flex: none; }
+.legend-hint { width: 100%; font-size: .88rem; color: rgba(241, 238, 255, .58); }
+.lens-tag {
+  position: absolute; left: 0; top: 0; z-index: 1; pointer-events: none; will-change: transform;
+  padding: 7px 12px; background: rgba(7, 6, 26, .78); color: var(--gold); white-space: nowrap;
+  font: 500 12px/1.2 "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  clip-path: var(--pxclip);
+}
+.hero-edge { position: absolute; left: 0; right: 0; bottom: -1px; width: 100%; height: clamp(36px, 6vw, 84px); fill: var(--bg); }
+
+@keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+.h1-a { animation: rise .9s .1s both cubic-bezier(.2, .7, .2, 1); }
+.h1-b { animation: rise .9s .38s both cubic-bezier(.2, .7, .2, 1); }
+.hero-sub { animation: rise .9s .62s both cubic-bezier(.2, .7, .2, 1); }
+.hero-cta, .legend { animation: rise .9s .8s both cubic-bezier(.2, .7, .2, 1); }
+
+/* Manifesto */
+.manifesto { padding-block: clamp(80px, 12vw, 170px); }
+.manifesto-text {
+  max-width: 21em; font-size: clamp(1.65rem, 3.7vw, 3.1rem); font-weight: 600;
+  font-variation-settings: "opsz" 72, "wdth" 86; letter-spacing: -.012em; line-height: 1.16;
+}
+.manifesto-text .w { display: inline; opacity: .2; transition: opacity .25s linear; }
+
+/* Simulator */
+.sim { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(300px, 1fr); gap: clamp(20px, 3vw, 40px); align-items: start; }
+.monitor { background: #0B0928; padding: 14px; clip-path: var(--pxclip); }
+.desk { width: 100%; display: grid; place-items: center; background: radial-gradient(ellipse at 50% 100%, #1b1550 0%, #0B0928 70%); }
+.stage { position: relative; width: 100%; background: #07051E; overflow: hidden; transition: height .7s cubic-bezier(.2, .8, .2, 1); }
+.stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.hud {
+  position: absolute; left: 10px; top: 10px; display: grid; gap: 2px; padding: 8px 12px;
+  background: rgba(7, 6, 26, .72); color: #E9E5FF; pointer-events: none;
+  font: 500 12px/1.45 "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  clip-path: var(--pxclip);
+}
+.hud-ar { position: absolute; right: 10px; bottom: 10px; padding: 5px 10px; background: rgba(7, 6, 26, .72); color: var(--gold); pointer-events: none; font: 500 12px/1.3 "JetBrains Mono", ui-monospace, monospace; clip-path: var(--pxclip); }
+.sim-note { margin-top: 14px; font-size: .9rem; color: var(--ink-2); max-width: 60ch; }
+
+.panel { padding: 26px 24px 28px; }
+.panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+.panel h3 { font-size: 1.5rem; font-weight: 700; font-variation-settings: "opsz" 48, "wdth" 85; letter-spacing: -.01em; }
+.profile { font-size: .9rem; color: var(--ink-2); }
+.seg-group { display: flex; gap: 6px; }
+.seg { flex: 1; padding: 10px 8px; border: 0; background: var(--bg-2); color: var(--ink); font-weight: 600; font-size: .95rem; cursor: pointer; clip-path: var(--pxclip); transition: background-color .2s; }
+.seg:hover { background: color-mix(in srgb, var(--bg-2) 80%, var(--accent)); }
+.seg[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.seg:focus-visible { outline-offset: -4px; }
+.field { margin-top: 22px; }
+.field-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 4px; font-weight: 600; font-size: .98rem; }
+.field-row output { color: var(--accent); font-variant-numeric: tabular-nums; font-weight: 700; }
+.field-label { display: block; margin-bottom: 8px; font-weight: 600; font-size: .98rem; }
+input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 28px; background: transparent; margin: 0; cursor: pointer; }
+input[type="range"]::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--accent) var(--p, 0%), var(--line) var(--p, 0%)); }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; margin-top: -8px; border-radius: 50%; background: var(--surface); border: 4px solid var(--accent); }
+input[type="range"]::-moz-range-track { height: 4px; border-radius: 2px; background: var(--line); }
+input[type="range"]::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--accent); }
+input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: var(--surface); border: 4px solid var(--accent); }
+.toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 16px 0; border-top: 1px solid var(--line); }
+.toggles { margin-top: 24px; }
+.toggle-row:last-child { padding-bottom: 0; }
+.toggle-row strong { display: block; font-weight: 600; font-size: .98rem; }
+.toggle-row small { display: block; font-size: .86rem; color: var(--ink-2); line-height: 1.4; margin-top: 2px; }
+.switch { position: relative; flex: none; width: 48px; height: 28px; border: 0; border-radius: 999px; background: var(--line); cursor: pointer; transition: background-color .2s; }
+.switch::after { content: ""; position: absolute; top: 4px; left: 4px; width: 20px; height: 20px; border-radius: 50%; background: var(--ink); transition: transform .2s cubic-bezier(.3, .9, .3, 1), background-color .2s; }
+.switch[aria-checked="true"] { background: var(--accent); }
+.switch[aria-checked="true"]::after { transform: translateX(20px); background: var(--accent-ink); }
+
+/* Pipeline */
+.pipe { display: grid; grid-template-columns: minmax(280px, 5fr) minmax(0, 7fr); gap: clamp(28px, 5vw, 80px); align-items: start; }
+.steps { position: relative; }
+.rail { position: absolute; left: 17px; top: 32px; bottom: 32px; width: 2px; background: var(--line); }
+.rail-fill { width: 100%; height: var(--fill, 0%); background: var(--accent); transition: height .45s cubic-bezier(.2, .8, .2, 1); }
+.step { position: relative; display: grid; grid-template-columns: 36px 1fr; gap: 18px; width: 100%; padding: 14px 0; border: 0; background: none; text-align: left; cursor: pointer; color: var(--ink-2); }
+.step .node { z-index: 1; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; border: 2px solid var(--line); background: var(--bg); font-weight: 700; font-size: .95rem; font-variant-numeric: tabular-nums; transition: background-color .25s, border-color .25s, color .25s; }
+.step.is-done .node { border-color: var(--accent); color: var(--accent); }
+.step[aria-selected="true"] { color: var(--ink); }
+.step[aria-selected="true"] .node { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.step strong { display: block; font-size: 1.12rem; font-weight: 650; line-height: 1.3; padding-top: 5px; }
+.step small { display: block; font-size: .92rem; line-height: 1.45; margin-top: 2px; }
+.step:focus-visible { outline-offset: 2px; }
+.detail h3 { font-size: clamp(1.6rem, 2.8vw, 2.3rem); font-weight: 700; font-variation-settings: "opsz" 72, "wdth" 84; letter-spacing: -.012em; line-height: 1.1; }
+.detail > p { margin-top: 14px; max-width: 56ch; color: var(--ink-2); }
+.bullets { margin-top: 22px; display: grid; gap: 12px; }
+.bullets li { position: relative; padding-left: 26px; max-width: 58ch; }
+.bullets li::before { content: ""; position: absolute; left: 0; top: .6em; width: 9px; height: 9px; background: var(--accent); }
+.term-cap { margin-top: 32px; margin-bottom: 8px; font-size: .86rem; color: var(--ink-2); }
+.term { background: var(--term); color: var(--term-ink); padding: 20px 22px; min-height: 196px; clip-path: var(--pxclip); font: 400 13.5px/1.75 "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; overflow: hidden; }
+.tl { display: flex; gap: 8px; white-space: nowrap; animation: tl .2s ease both; }
+@keyframes tl { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
+.tl.cmd { color: var(--gold); }
+.tl.info { color: #B9A8FF; }
+.tl .dots { flex: 1; min-width: 12px; border-bottom: 1px dotted rgba(220, 215, 255, .3); transform: translateY(-6px); }
+.tl .res { color: #9BE7B5; }
+.tl .txt { overflow: hidden; text-overflow: ellipsis; }
+
+/* Ledger */
+.split { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(28px, 5vw, 80px); align-items: start; }
+.ledger { border-top: 1px solid var(--line); }
+.ledger li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 6px 32px; padding: 28px 0; border-bottom: 1px solid var(--line); }
+.ledger h3 { font-size: 1.4rem; font-weight: 650; font-variation-settings: "opsz" 36, "wdth" 88; line-height: 1.2; letter-spacing: -.005em; }
+.ledger p { color: var(--ink-2); max-width: 46ch; }
+
+/* FAQ */
+.faq { max-width: 880px; border-top: 1px solid var(--line); }
+.qa { border-bottom: 1px solid var(--line); }
+.q { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 24px 0; border: 0; background: none; text-align: left; cursor: pointer; font-size: clamp(1.1rem, 1.8vw, 1.35rem); font-weight: 620; line-height: 1.3; }
+.q:focus-visible { outline-offset: -2px; }
+.plus { position: relative; flex: none; width: 20px; height: 20px; }
+.plus::before, .plus::after { content: ""; position: absolute; left: 0; top: 9px; width: 20px; height: 2px; background: var(--accent); transition: transform .3s cubic-bezier(.3, .9, .3, 1); }
+.plus::after { transform: rotate(90deg); }
+.qa.open .plus::after { transform: rotate(0deg); }
+.a { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .35s cubic-bezier(.2, .8, .2, 1); }
+.qa.open .a { grid-template-rows: 1fr; }
+.a > div { overflow: hidden; }
+.a p { padding: 0 48px 26px 0; max-width: 62ch; color: var(--ink-2); }
+
+/* Project */
+.proj { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(300px, 1fr); gap: clamp(28px, 4vw, 64px); align-items: start; }
+.group { border: 0; padding: 0; margin: 0 0 34px; min-width: 0; }
+.group legend { padding: 0; margin-bottom: 12px; font-weight: 650; font-size: 1.05rem; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { position: relative; }
+.chip input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.chip span { display: block; padding: 13px 18px; background: var(--bg-2); color: var(--ink); font-weight: 600; font-size: .98rem; clip-path: var(--pxclip); transition: background-color .2s, color .2s; }
+.chip:hover span { background: color-mix(in srgb, var(--bg-2) 78%, var(--accent)); }
+.chip input:checked + span { background: var(--accent); color: var(--accent-ink); }
+.chip input:focus-visible + span { outline: 2px solid var(--focus); outline-offset: -5px; }
+.scope-note { margin-top: 12px; font-size: .95rem; color: var(--ink-2); min-height: 3em; max-width: 56ch; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.form-grid .full { grid-column: 1 / -1; }
+.fld label { display: block; margin-bottom: 6px; font-weight: 600; font-size: .95rem; }
+.fld input, .fld textarea { width: 100%; padding: 14px 16px; border: 0; background: var(--bg-2); color: var(--ink); border-radius: 0; clip-path: var(--pxclip); font-size: 1rem; }
+.fld textarea { min-height: 120px; resize: vertical; }
+.fld input:focus-visible, .fld textarea:focus-visible { outline-offset: -5px; }
+.fld.has-error input { background: color-mix(in srgb, var(--danger) 14%, var(--bg-2)); }
+.err { display: none; margin-top: 6px; font-size: .9rem; color: var(--danger); font-weight: 550; }
+.fld.has-error .err { display: block; }
+.form-actions { margin-top: 24px; display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+.form-actions small { color: var(--ink-2); font-size: .9rem; max-width: 40ch; }
+.summary { position: sticky; top: calc(var(--nav-h) + 24px + env(safe-area-inset-top, 0px)); padding: 28px 26px; }
+.summary h3 { font-size: 1.4rem; font-weight: 700; font-variation-settings: "opsz" 48, "wdth" 85; }
+.summary dl { margin-top: 18px; display: grid; gap: 0; }
+.summary dl > div { display: flex; justify-content: space-between; gap: 16px; padding: 11px 0; border-top: 1px solid var(--line); }
+.summary dt { color: var(--ink-2); font-size: .95rem; }
+.summary dd { font-weight: 650; text-align: right; }
+.effort { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
+.effort-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-weight: 650; }
+.meter { margin-top: 10px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+.meter i { height: 10px; background: var(--line); transition: background-color .3s; }
+.meter i.on { background: var(--accent); }
+.factors { margin-top: 12px; display: grid; gap: 6px; font-size: .9rem; color: var(--ink-2); }
+.phases-title { margin-top: 22px; font-weight: 650; }
+.phases { margin-top: 8px; display: grid; gap: 6px; font-size: .95rem; }
+.phases li { position: relative; padding-left: 22px; }
+.phases li::before { content: ""; position: absolute; left: 0; top: .55em; width: 8px; height: 8px; background: var(--accent); }
+.sent { display: none; padding: 28px; background: var(--bg-2); clip-path: var(--pxclip); }
+.sent.show { display: block; }
+.sent h3 { font-size: 1.5rem; font-weight: 700; font-variation-settings: "opsz" 48, "wdth" 85; }
+.sent p { margin-top: 10px; color: var(--ink-2); max-width: 54ch; }
+.sent textarea { margin-top: 16px; width: 100%; min-height: 220px; padding: 14px 16px; border: 0; background: var(--surface); color: var(--ink); font: 400 13.5px/1.6 "JetBrains Mono", ui-monospace, monospace; resize: vertical; }
+.sent .form-actions { margin-top: 18px; }
+
+/* Footer */
+.foot { border-top: 1px solid var(--line); padding-block: 56px calc(40px + env(safe-area-inset-bottom, 0px)); }
+.foot-grid { display: flex; flex-wrap: wrap; gap: 32px 64px; justify-content: space-between; }
+.foot p { color: var(--ink-2); max-width: 44ch; margin-top: 14px; font-size: .98rem; }
+.foot nav { display: flex; flex-wrap: wrap; gap: 10px 28px; align-items: flex-start; }
+.foot nav a { text-decoration: none; font-weight: 550; }
+.foot nav a:hover { text-decoration: underline; text-underline-offset: 4px; }
+.legal { margin-top: 44px; padding-top: 22px; border-top: 1px solid var(--line); font-size: .86rem; color: var(--ink-2); max-width: 90ch; }
+.foot .brand { color: var(--ink); }
+
+@media (max-width: 980px) {
+  .sim, .pipe, .split, .proj { grid-template-columns: minmax(0, 1fr); }
+  .summary { position: static; }
+}
+@media (max-width: 620px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .ledger li { grid-template-columns: 1fr; }
+  .a p { padding-right: 0; }
+  .hud { font-size: 11px; padding: 6px 9px; }
+  .monitor { padding: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .manifesto-text .w { opacity: 1 !important; }
+}
+</style>
+</head>
+<body id="top">
+<a class="skip" href="#manifesto">Pular para o conteúdo</a>
+
+<header class="nav" id="nav">
+  <div class="nav-inner">
+    <a class="brand" href="#top" aria-label="NyxStudio, voltar ao início">
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <path fill="currentColor" fill-rule="evenodd" d="M32 6a26 26 0 1 0 0 52a26 26 0 0 0 0-52zm10 7a22 22 0 0 1 0 38a26 26 0 0 0 0-38z"/>
+        <rect x="45" y="27" width="5" height="5" fill="currentColor"/>
+        <rect x="50" y="32" width="5" height="5" fill="currentColor" opacity=".7"/>
+        <rect x="45" y="37" width="5" height="5" fill="currentColor" opacity=".45"/>
+      </svg>
+      <span>NyxStudio</span>
+    </a>
+    <nav class="links" aria-label="Principal">
+      <a href="#simulador">Simulador</a>
+      <a href="#processo">Processo</a>
+      <a href="#entregas">Entregas</a>
+      <a href="#perguntas">Perguntas</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="icon-btn" id="themeBtn" type="button" aria-label="Alternar entre tema claro e escuro">
+        <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        <svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      </button>
+      <a class="btn btn-primary btn-sm" href="#projeto">Começar um projeto</a>
+      <button class="icon-btn menu-btn" id="menuBtn" type="button" aria-expanded="false" aria-controls="mobileMenu" aria-label="Abrir menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="mobile-menu" id="mobileMenu" hidden>
+    <a href="#simulador">Simulador</a>
+    <a href="#processo">Processo</a>
+    <a href="#entregas">Entregas</a>
+    <a href="#perguntas">Perguntas</a>
+    <a class="btn btn-primary" href="#projeto">Começar um projeto</a>
+  </div>
+</header>
+
+<main>
+  <section class="hero" id="hero" aria-label="Apresentação">
+    <canvas id="heroCanvas" role="img" aria-label="Paisagem noturna com uma lua crescente sobre um lago. Uma lente circular mostra a mesma cena em alta definição, enquanto o resto da imagem aparece em baixa resolução, como em um console."></canvas>
+    <div class="lens-tag" id="lensTag" aria-hidden="true">PC, 4K, 144 FPS</div>
+    <div class="hero-inner">
+      <h1 class="display">
+        <span class="h1-a">Console é onde o jogo nasce.</span>
+        <span class="h1-b">O PC é onde ele cresce.</span>
+      </h1>
+      <p class="hero-sub">O NyxStudio converte jogos de PlayStation, Xbox e Nintendo Switch para o computador. Sempre com licença do detentor dos direitos, sempre com engenharia feita para a máquina de quem joga.</p>
+      <div class="hero-cta">
+        <a class="btn btn-primary" href="#projeto">Começar um projeto</a>
+        <a class="btn btn-ghost" href="#simulador">Abrir o simulador</a>
+      </div>
+      <ul class="legend" aria-label="Legenda da demonstração">
+        <li>
+          <svg viewBox="0 0 18 18" aria-hidden="true"><rect x="1" y="1" width="6" height="6" fill="#F1EEFF" opacity=".55"/><rect x="7" y="7" width="6" height="6" fill="#F1EEFF" opacity=".55"/><rect x="11" y="1" width="6" height="6" fill="#F1EEFF" opacity=".3"/></svg>
+          Fora da lente: Console, 900p, 30 FPS
+        </li>
+        <li>
+          <svg viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7.5" fill="none" stroke="#FFD98A" stroke-width="2"/></svg>
+          Dentro da lente: PC, 4K, 144 FPS
+        </li>
+        <li class="legend-hint">Mova o cursor ou arraste sobre a cena para mover a lente. Demonstração ilustrativa.</li>
+      </ul>
+    </div>
+    <svg class="hero-edge" viewBox="0 0 1440 90" preserveAspectRatio="none" aria-hidden="true"><path id="edgePath" d="M0 90 L1440 90 Z"/></svg>
+  </section>
+
+  <section class="manifesto" id="manifesto" aria-label="Manifesto">
+    <div class="wrap">
+      <p class="manifesto-text" id="mText">Muitos dos melhores jogos já feitos continuam presos a uma única máquina. Acreditamos que um jogo deve viver onde as pessoas estão: na máquina que elas têm, na tela que escolheram, com os controles que preferem. Nosso trabalho é abrir essa porta, com o cuidado que a obra original merece.</p>
+    </div>
+  </section>
+
+  <section class="sec" id="simulador" style="padding-top: clamp(24px, 4vw, 60px)">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2>Mexa nas configurações e veja o que o PC permite</h2>
+        <p class="lead">É assim que o jogador de PC espera encontrar o seu jogo. Troque o perfil Console por PC Ultra ou ajuste cada opção à mão.</p>
+      </div>
+      <div class="sim">
+        <div>
+          <div class="monitor">
+            <div class="desk" id="desk">
+              <div class="stage" id="stage">
+                <canvas id="simCanvas" role="img" aria-label="Cena noturna que muda conforme as configurações gráficas escolhidas ao lado."></canvas>
+                <div class="hud" id="hud" aria-hidden="true"><span id="hudRes"></span><span id="hudFps"></span><span id="hudFlags"></span></div>
+                <div class="hud-ar" id="hudAr" aria-hidden="true">16:9</div>
+              </div>
+            </div>
+          </div>
+          <p class="sim-note">Telas de 60 Hz exibem no máximo 60 quadros por segundo. Taxas maiores aparecem por completo em monitores de alta taxa de atualização.</p>
+        </div>
+
+        <div class="panel pxl-box" role="group" aria-labelledby="panelTitle">
+          <div class="panel-head">
+            <h3 id="panelTitle">Gráficos</h3>
+            <p class="profile" id="profileLabel" aria-live="polite">Perfil: Console</p>
+          </div>
+          <div class="seg-group" role="group" aria-label="Perfis prontos">
+            <button class="seg" type="button" data-preset="console" aria-pressed="true">Console</button>
+            <button class="seg" type="button" data-preset="pc" aria-pressed="false">PC</button>
+            <button class="seg" type="button" data-preset="ultra" aria-pressed="false">PC Ultra</button>
+          </div>
+
+          <div class="field">
+            <div class="field-row"><label for="rRes">Resolução</label><output id="oRes" for="rRes">900p</output></div>
+            <input type="range" id="rRes" min="0" max="6" step="1" value="3">
+          </div>
+          <div class="field">
+            <div class="field-row"><label for="rFps">Taxa de quadros</label><output id="oFps" for="rFps">30 FPS</output></div>
+            <input type="range" id="rFps" min="0" max="6" step="1" value="1">
+          </div>
+          <div class="field">
+            <div class="field-row"><label for="rFov">Campo de visão</label><output id="oFov" for="rFov">70 graus</output></div>
+            <input type="range" id="rFov" min="60" max="120" step="1" value="70">
+          </div>
+          <div class="field">
+            <span class="field-label" id="lAr">Proporção da tela</span>
+            <div class="seg-group" role="group" aria-labelledby="lAr">
+              <button class="seg" type="button" data-ar="0" aria-pressed="true">16:9</button>
+              <button class="seg" type="button" data-ar="1" aria-pressed="false">21:9</button>
+              <button class="seg" type="button" data-ar="2" aria-pressed="false">32:9</button>
+            </div>
+          </div>
+
+          <div class="toggles">
+            <div class="toggle-row">
+              <div><strong id="tRefl">Reflexos em tempo real</strong><small>A lua e as montanhas aparecem no lago.</small></div>
+              <button class="switch" type="button" role="switch" aria-checked="false" aria-labelledby="tRefl" data-key="refl"></button>
+            </div>
+            <div class="toggle-row">
+              <div><strong id="tHdr">HDR</strong><small>Brilhos mais intensos e maior faixa de cor.</small></div>
+              <button class="switch" type="button" role="switch" aria-checked="false" aria-labelledby="tHdr" data-key="hdr"></button>
+            </div>
+            <div class="toggle-row">
+              <div><strong id="tUp">Reconstrução de imagem</strong><small>Suaviza a imagem em resoluções baixas, como DLSS, FSR e XeSS.</small></div>
+              <button class="switch" type="button" role="switch" aria-checked="false" aria-labelledby="tUp" data-key="up"></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="processo" style="background: var(--bg-2)">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2>Seis fases, do contrato ao lançamento</h2>
+        <p class="lead">Cada fase tem um objetivo claro e uma entrega que você pode revisar antes de seguir para a próxima.</p>
+      </div>
+      <div class="pipe">
+        <div class="steps" id="steps" role="tablist" aria-orientation="vertical" aria-label="Fases da conversão">
+          <div class="rail" aria-hidden="true"><div class="rail-fill" id="railFill"></div></div>
+        </div>
+        <div class="detail" id="detail" role="tabpanel" aria-live="polite">
+          <h3 id="dTitle"></h3>
+          <p id="dLead"></p>
+          <ul class="bullets" id="dBullets"></ul>
+          <p class="term-cap">Exemplo ilustrativo de saída do nosso fluxo de trabalho</p>
+          <div class="term" id="term" aria-hidden="true"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="entregas">
+    <div class="wrap split">
+      <div>
+        <h2>O que você recebe ao final</h2>
+        <p class="lead">Nada de caixa-preta. Tudo o que construímos é documentado e entregue para a sua equipe.</p>
+      </div>
+      <ul class="ledger">
+        <li><h3>Build para Windows e Linux</h3><p>Pronta para publicar, com instalador e sistema de atualização.</p></li>
+        <li><h3>Relatório técnico de desempenho</h3><p>Tempo de quadro, uso de memória e resultados em cada configuração de hardware testada.</p></li>
+        <li><h3>Pacote para as lojas</h3><p>Conquistas, saves na nuvem e metadados configurados para Steam, Epic Games Store e GOG.</p></li>
+        <li><h3>Código e documentação</h3><p>Tudo o que mudou, explicado, para que a sua equipe continue evoluindo o jogo.</p></li>
+        <li><h3>Suporte depois do lançamento</h3><p>Correções e ajustes de compatibilidade conforme novas placas de vídeo e drivers chegam ao mercado.</p></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="sec" id="perguntas" style="background: var(--bg-2)">
+    <div class="wrap">
+      <div class="sec-head"><h2>Perguntas frequentes</h2></div>
+      <div class="faq" id="faq"></div>
+    </div>
+  </section>
+
+  <section class="sec" id="projeto">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2>Conte o que você quer levar para o PC</h2>
+        <p class="lead">Escolha as opções abaixo para montar o ponto de partida da conversa. A proposta final sai depois da auditoria técnica.</p>
+      </div>
+      <div class="proj">
+        <div>
+          <form id="contactForm" novalidate>
+            <fieldset class="group">
+              <legend>Plataforma de origem</legend>
+              <div class="chips">
+                <label class="chip"><input type="radio" name="origin" value="ps" checked><span>PlayStation</span></label>
+                <label class="chip"><input type="radio" name="origin" value="xb"><span>Xbox</span></label>
+                <label class="chip"><input type="radio" name="origin" value="sw"><span>Nintendo Switch</span></label>
+              </div>
+            </fieldset>
+            <fieldset class="group">
+              <legend>Engine do jogo</legend>
+              <div class="chips">
+                <label class="chip"><input type="radio" name="engine" value="ue" checked><span>Unreal Engine</span></label>
+                <label class="chip"><input type="radio" name="engine" value="un"><span>Unity</span></label>
+                <label class="chip"><input type="radio" name="engine" value="pr"><span>Engine própria</span></label>
+              </div>
+            </fieldset>
+            <fieldset class="group">
+              <legend>Escopo da conversão</legend>
+              <div class="chips">
+                <label class="chip"><input type="radio" name="scope" value="fiel"><span>Conversão fiel</span></label>
+                <label class="chip"><input type="radio" name="scope" value="aprim" checked><span>Conversão aprimorada</span></label>
+                <label class="chip"><input type="radio" name="scope" value="full"><span>Experiência completa de PC</span></label>
+              </div>
+              <p class="scope-note" id="scopeNote"></p>
+            </fieldset>
+
+            <div class="form-grid">
+              <div class="fld" id="fName"><label for="iName">Seu nome</label><input id="iName" name="name" type="text" autocomplete="name" aria-describedby="eName"><p class="err" id="eName" role="alert">Informe seu nome.</p></div>
+              <div class="fld" id="fMail"><label for="iMail">E-mail</label><input id="iMail" name="email" type="email" autocomplete="email" aria-describedby="eMail"><p class="err" id="eMail" role="alert">Informe um e-mail válido, como nome@empresa.com.</p></div>
+              <div class="fld full"><label for="iStudio">Estúdio ou empresa</label><input id="iStudio" name="studio" type="text" autocomplete="organization"></div>
+              <div class="fld full"><label for="iMsg">Conte sobre o jogo</label><textarea id="iMsg" name="msg"></textarea></div>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-primary" type="submit">Montar meu pedido</button>
+              <small>Ao enviar, geramos o texto do pedido com as opções escolhidas para você mandar por e-mail.</small>
+            </div>
+          </form>
+
+          <div class="sent" id="sent" tabindex="-1">
+            <h3>Pedido pronto para enviar</h3>
+            <p>Abra o texto no seu aplicativo de e-mail ou copie e cole onde preferir.</p>
+            <textarea id="sentText" readonly aria-label="Texto do pedido"></textarea>
+            <div class="form-actions">
+              <a class="btn btn-primary" id="mailLink" href="#">Abrir no e-mail</a>
+              <button class="btn btn-soft" type="button" id="copyBtn">Copiar texto</button>
+              <button class="btn btn-soft" type="button" id="editBtn">Voltar e editar</button>
+            </div>
+            <p id="copyMsg" role="status"></p>
+          </div>
+        </div>
+
+        <aside class="summary pxl-box" aria-label="Resumo do projeto">
+          <h3>Resumo do projeto</h3>
+          <dl>
+            <div><dt>Origem</dt><dd id="sOrigin"></dd></div>
+            <div><dt>Engine</dt><dd id="sEngine"></dd></div>
+            <div><dt>Escopo</dt><dd id="sScope"></dd></div>
+          </dl>
+          <div class="effort">
+            <div class="effort-row"><span>Esforço inicial</span><span id="sEffort"></span></div>
+            <div class="meter" id="meter" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+            <ul class="factors" id="factors"></ul>
+          </div>
+          <p class="phases-title">Fases incluídas</p>
+          <ul class="phases" id="phases"></ul>
+        </aside>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a class="brand" href="#top" aria-label="NyxStudio, voltar ao início">
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <path fill="currentColor" fill-rule="evenodd" d="M32 6a26 26 0 1 0 0 52a26 26 0 0 0 0-52zm10 7a22 22 0 0 1 0 38a26 26 0 0 0 0-38z"/>
+            <rect x="45" y="27" width="5" height="5" fill="currentColor"/>
+            <rect x="50" y="32" width="5" height="5" fill="currentColor" opacity=".7"/>
+            <rect x="45" y="37" width="5" height="5" fill="currentColor" opacity=".45"/>
+          </svg>
+          <span>NyxStudio</span>
+        </a>
+        <p>Conversão licenciada de jogos de console para PC.</p>
+      </div>
+      <nav aria-label="Rodapé">
+        <a href="#simulador">Simulador</a>
+        <a href="#processo">Processo</a>
+        <a href="#entregas">Entregas</a>
+        <a href="#perguntas">Perguntas</a>
+        <a href="#projeto">Começar um projeto</a>
+      </nav>
+    </div>
+    <p class="legal">PlayStation, Xbox, Nintendo Switch, Steam, Epic Games Store, GOG, Unreal Engine, Unity, DLSS, FSR e XeSS são marcas de seus respectivos proprietários e aparecem apenas para indicar compatibilidade. O NyxStudio não tem vínculo com essas empresas. 2026 NyxStudio.</p>
+  </div>
+</footer>
+
+<script>
+const $ = (s, c = document) => c.querySelector(s);
+const $$ = (s, c = document) => Array.from(c.querySelectorAll(s));
+const TAU = Math.PI * 2;
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const CONTACT_EMAIL = 'contato@nyxstudio.com'; /* troque pelo e-mail real do estúdio */
+
+/* ---------- Scene renderer (shared by hero lens and simulator) ---------- */
+function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const rnd = mulberry32(11);
+const STARS = Array.from({ length: 240 }, () => ({ x: (rnd() * 2 - 1) * 9, y: -(0.03 + rnd() * 1.9), s: 0.0016 + rnd() * 0.0034, ph: rnd() * TAU, sp: 0.6 + rnd() * 2.2, warm: rnd() < 0.18 }));
+const PINES = Array.from({ length: 76 }, (_, i) => ({ x: (i - 38) * 0.33 + (rnd() - 0.5) * 0.22, h: 0.06 + rnd() * 0.12, w: 0.028 + rnd() * 0.02 }));
+const RIDGES = [
+  { par: 0.12, amp: 0.34, base: -0.01, f: 1.1, ph: 1.3, col: '#3A2B9C' },
+  { par: 0.28, amp: 0.26, base: 0.0, f: 1.7, ph: 4.0, col: '#241A6E' },
+  { par: 0.55, amp: 0.2, base: 0.0, f: 2.4, ph: 2.2, col: '#120D40' }
+];
+const ridgeH = (r, x) => r.amp * (0.5 + 0.35 * Math.sin(r.f * x + r.ph) + 0.2 * Math.sin(2.37 * r.f * x + 1.7 * r.ph) + 0.1 * Math.sin(5.1 * r.f * x));
+
+function drawRidge(g, W, k, hy, cam, r) {
+  const step = Math.max(2, Math.round(W / 260));
+  g.beginPath(); g.moveTo(-2, hy + 1);
+  for (let px = -2; px <= W + step; px += step) {
+    const wx = (px - W / 2) / k + cam * r.par;
+    g.lineTo(px, hy + (r.base - ridgeH(r, wx)) * k);
+  }
+  g.lineTo(W + step, hy + 1); g.closePath();
+  g.fillStyle = r.col; g.fill();
+}
+
+function renderScene(g, W, H, t, o) {
+  const k = H / (2 * o.zoom), hy = H * o.horizon, cam = Math.sin(t * 0.07) * 0.45;
+  const X = (x, par) => W / 2 + (x - cam * par) * k;
+  const Y = y => hy + y * k;
+  const hdr = o.hdr;
+
+  /* sky */
+  const sky = g.createLinearGradient(0, 0, 0, hy);
+  sky.addColorStop(0, '#05041A'); sky.addColorStop(0.55, '#150F4F'); sky.addColorStop(1, hdr > 0.5 ? '#6A4BD8' : '#43319E');
+  g.fillStyle = sky; g.fillRect(0, 0, W, hy + 1);
+  if (hdr > 0) {
+    const gl = g.createLinearGradient(0, hy - k * 0.55, 0, hy);
+    gl.addColorStop(0, 'rgba(255,170,120,0)'); gl.addColorStop(1, 'rgba(255,176,130,' + (0.4 * hdr) + ')');
+    g.fillStyle = gl; g.fillRect(0, hy - k * 0.55, W, k * 0.55 + 1);
+  }
+
+  /* stars */
+  const sb = 0.55 + 0.45 * hdr;
+  for (const s of STARS) {
+    const x = Math.floor(X(s.x, 0.04)), y = Math.floor(Y(s.y));
+    if (x < -4 || x > W + 4 || y < 0 || y > hy) continue;
+    const a = ((0.5 + 0.5 * Math.sin(t * s.sp + s.ph)) * 0.6 + 0.3) * sb;
+    g.fillStyle = s.warm ? 'rgba(255,226,170,' + a.toFixed(3) + ')' : 'rgba(226,222,255,' + a.toFixed(3) + ')';
+    const z = Math.max(1, Math.round(s.s * k));
+    g.fillRect(x, y, z, z);
+  }
+
+  /* moon (crescent) */
+  const moonWorldX = o.moonRel !== undefined ? o.moonRel * W / (2 * k) : o.moonX;
+  const mx = X(moonWorldX, 0.02), my = Y(o.moonY), R = 0.2 * k;
+  g.save();
+  if (hdr > 0.5) g.globalCompositeOperation = 'lighter';
+  const mg = g.createRadialGradient(mx, my, R * 0.6, mx, my, R * (3.2 + 3 * hdr));
+  mg.addColorStop(0, 'rgba(255,226,160,' + (0.28 + 0.5 * hdr) + ')'); mg.addColorStop(1, 'rgba(255,226,160,0)');
+  g.fillStyle = mg; g.fillRect(mx - R * 7, my - R * 7, R * 14, R * 14);
+  g.restore();
+  g.save();
+  g.beginPath(); g.arc(mx, my, R, 0, TAU); g.clip();
+  g.fillStyle = '#FFF1CC';
+  g.beginPath(); g.rect(mx - R * 2, my - R * 2, R * 4, R * 4); g.arc(mx + R * 0.5, my - R * 0.12, R * 0.9, 0, TAU, true);
+  g.fill('evenodd');
+  g.restore();
+
+  /* shooting star */
+  const cyc = 7, ci = Math.floor(t / cyc), ph = (t % cyc) / 1.1;
+  if (ph < 1) {
+    const r1 = (Math.sin(ci * 12.9898) * 43758.5453) % 1, rr = Math.abs(r1);
+    const x0 = W * (0.05 + rr * 0.4), y0 = H * 0.06 + rr * H * 0.08;
+    const dx = W * 0.32, dy = H * 0.2;
+    const hx = x0 + dx * ph, hy2 = y0 + dy * ph, tp = Math.max(0, ph - 0.16);
+    const tx = x0 + dx * tp, ty = y0 + dy * tp;
+    const sg = g.createLinearGradient(tx, ty, hx, hy2);
+    sg.addColorStop(0, 'rgba(255,240,200,0)'); sg.addColorStop(1, 'rgba(255,240,200,' + (0.9 * (1 - ph * 0.5)) + ')');
+    g.strokeStyle = sg; g.lineWidth = Math.max(1, k * 0.007); g.lineCap = 'round';
+    g.beginPath(); g.moveTo(tx, ty); g.lineTo(hx, hy2); g.stroke();
+  }
+
+  /* ridges and pines */
+  for (let i = 0; i < RIDGES.length; i++) {
+    drawRidge(g, W, k, hy, cam, RIDGES[i]);
+    if (i === 2) {
+      const r = RIDGES[2];
+      g.fillStyle = '#0A0730';
+      for (const p of PINES) {
+        const px = W / 2 + (p.x - cam * r.par) * k;
+        if (px < -40 || px > W + 40) continue;
+        const by = hy + (r.base - ridgeH(r, p.x) * 0.9) * k + 2;
+        const th = p.h * k, tw = p.w * k;
+        g.beginPath();
+        g.moveTo(px, by - th);
+        g.lineTo(px + tw * 0.5, by - th * 0.62); g.lineTo(px + tw * 0.22, by - th * 0.62);
+        g.lineTo(px + tw * 0.75, by - th * 0.3); g.lineTo(px + tw * 0.3, by - th * 0.3);
+        g.lineTo(px + tw, by);
+        g.lineTo(px - tw, by);
+        g.lineTo(px - tw * 0.3, by - th * 0.3); g.lineTo(px - tw * 0.75, by - th * 0.3);
+        g.lineTo(px - tw * 0.22, by - th * 0.62); g.lineTo(px - tw * 0.5, by - th * 0.62);
+        g.closePath(); g.fill();
+      }
+    }
+  }
+
+  /* water */
+  const wg = g.createLinearGradient(0, hy, 0, H);
+  wg.addColorStop(0, hdr > 0.5 ? '#2E2290' : '#271C78'); wg.addColorStop(1, '#07051E');
+  g.fillStyle = wg; g.fillRect(0, hy, W, H - hy);
+
+  if (o.reflect > 0) {
+    g.save();
+    g.beginPath(); g.rect(0, hy, W, H - hy); g.clip();
+    g.translate(0, hy); g.scale(1, -1); g.translate(0, -hy);
+    g.globalAlpha = 0.5;
+    for (const r of RIDGES) drawRidge(g, W, k, hy, cam, r);
+    g.restore();
+    /* moon reflection */
+    const N = 26, band = k * 0.014;
+    for (let i = 0; i < N; i++) {
+      const yy = hy + (0.02 + i * 0.03) * k;
+      if (yy > H) break;
+      const w = R * 1.9 * (1.05 - i * 0.025) * (0.7 + 0.3 * Math.sin(i * 2.1 + t * 1.8));
+      const cx = mx + Math.sin(t * 1.4 + i * 0.9) * k * 0.012 * (1 + i * 0.3);
+      const a = (0.62 - i * 0.022) * (0.6 + 0.4 * hdr);
+      g.fillStyle = 'rgba(255,230,170,' + Math.max(0, a).toFixed(3) + ')';
+      g.fillRect(cx - w / 2, yy, w, band);
+    }
+    /* ripples */
+    const gap = k * 0.036, nb = Math.ceil((H - hy) / gap);
+    for (let i = 0; i < nb; i++) {
+      const a = 0.1 + 0.1 * Math.sin(i * 1.9 + t * 1.3);
+      g.fillStyle = 'rgba(10,7,40,' + a.toFixed(3) + ')';
+      g.fillRect(0, hy + i * gap, W, k * 0.012);
+    }
+  }
+}
+
+/* ---------- Theme and navigation ---------- */
+(function () {
+  const root = document.documentElement;
+  $('#themeBtn').addEventListener('click', () => {
+    const cur = root.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const next = cur === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('nyx-theme', next); } catch (e) {}
+  });
+  const btn = $('#menuBtn'), menu = $('#mobileMenu');
+  btn.addEventListener('click', () => {
+    const open = menu.hasAttribute('hidden');
+    if (open) menu.removeAttribute('hidden'); else menu.setAttribute('hidden', '');
+    btn.setAttribute('aria-expanded', String(open));
+    btn.setAttribute('aria-label', open ? 'Fechar menu' : 'Abrir menu');
+  });
+  $$('a', menu).forEach(a => a.addEventListener('click', () => { menu.setAttribute('hidden', ''); btn.setAttribute('aria-expanded', 'false'); btn.setAttribute('aria-label', 'Abrir menu'); }));
+
+  const links = $$('.links a');
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) links.forEach(a => a.setAttribute('aria-current', String(a.getAttribute('href') === '#' + e.target.id)));
+    });
+  }, { rootMargin: '-45% 0px -50% 0px' });
+  ['simulador', 'processo', 'entregas', 'perguntas', 'projeto'].forEach(id => io.observe($('#' + id)));
+})();
+
+/* ---------- Hero edge: pixels resolving into a curve ---------- */
+(function () {
+  const W = 1440, Hh = 90;
+  const f = x => 46 + 24 * Math.sin(x / W * Math.PI * 2.2 + 0.6) + 9 * Math.sin(x / W * Math.PI * 6);
+  let d = 'M0 ' + Hh + ' ';
+  for (let x = 0; x < W;) {
+    const t = Math.min(1, x / 1000);
+    const s = Math.max(1, Math.round(96 * Math.pow(1 - t, 2.2)));
+    const q = s > 3 ? s / 3 : 0;
+    const raw = f(x + s / 2);
+    const y = q ? Math.round(raw / q) * q : raw;
+    const x2 = Math.min(W, x + s);
+    d += 'L' + x + ' ' + y.toFixed(1) + ' L' + x2 + ' ' + y.toFixed(1) + ' ';
+    x += s;
+  }
+  d += 'L' + W + ' ' + Hh + ' Z';
+  $('#edgePath').setAttribute('d', d);
+})();
+
+/* ---------- Hero lens ---------- */
+(function () {
+  const hero = $('#hero'), cv = $('#heroCanvas'), g = cv.getContext('2d'), tag = $('#lensTag');
+  const lo = document.createElement('canvas'), lg = lo.getContext('2d');
+  const CON = { zoom: 1, horizon: 0.5, reflect: 0, hdr: 0, moonRel: 0.62, moonY: -0.72 };
+  const PCP = { zoom: 1, horizon: 0.5, reflect: 1, hdr: 1, moonRel: 0.62, moonY: -0.72 };
+  let W = 0, H = 0, d = 1, r = 180, lx = 0, ly = 0, tx = 0, ty = 0, last = -1e9, visible = true, dirty = true, ready = false;
+
+  function resize() {
+    d = Math.min(window.devicePixelRatio || 1, 1.5);
+    const b = cv.getBoundingClientRect();
+    W = Math.max(2, Math.round(b.width * d)); H = Math.max(2, Math.round(b.height * d));
+    cv.width = W; cv.height = H;
+    lo.height = 150; lo.width = Math.max(2, Math.round(150 * W / H));
+    r = clamp(b.width * 0.17, 110, 250);
+    if (!ready) { lx = tx = W * 0.68; ly = ty = H * 0.36; ready = true; }
+    dirty = true;
+  }
+  new ResizeObserver(resize).observe(hero);
+  resize();
+
+  hero.addEventListener('pointermove', e => {
+    const b = cv.getBoundingClientRect();
+    tx = (e.clientX - b.left) * d; ty = (e.clientY - b.top) * d;
+    last = performance.now(); dirty = true;
+  });
+  hero.addEventListener('pointerleave', () => { last = performance.now() - 1200; });
+  new IntersectionObserver(es => { visible = es[0].isIntersecting; }, { threshold: 0 }).observe(hero);
+
+  function frame(now) {
+    requestAnimationFrame(frame);
+    if (!visible || document.hidden || !ready) return;
+    if (reduced && !dirty) return;
+    const t = reduced ? 14 : now / 1000;
+    if (!reduced && now - last > 2800) {
+      tx = W * (0.5 + 0.3 * Math.sin(t * 0.32));
+      ty = H * (0.36 + 0.14 * Math.sin(t * 0.5 + 1));
+    }
+    if (reduced) { lx = tx; ly = ty; } else { lx += (tx - lx) * 0.14; ly += (ty - ly) * 0.14; }
+
+    renderScene(lg, lo.width, lo.height, Math.floor(t * 12) / 12, CON);
+    g.imageSmoothingEnabled = false;
+    g.drawImage(lo, 0, 0, W, H);
+
+    const rr = r * d;
+    g.save();
+    g.beginPath(); g.arc(lx, ly, rr, 0, TAU); g.clip();
+    renderScene(g, W, H, t, PCP);
+    g.restore();
+
+    g.save();
+    g.lineWidth = 2 * d; g.strokeStyle = 'rgba(255,217,138,.9)';
+    g.shadowColor = 'rgba(255,217,138,.8)'; g.shadowBlur = 28 * d;
+    g.beginPath(); g.arc(lx, ly, rr, 0, TAU); g.stroke();
+    g.restore();
+
+    tag.style.transform = 'translate(' + (lx / d + r * 0.62) + 'px,' + (ly / d + r * 0.72) + 'px)';
+    dirty = false;
+  }
+  requestAnimationFrame(frame);
+})();
+
+/* ---------- Manifesto reading progress ---------- */
+const mText = $('#mText');
+const mWords = (function () {
+  const txt = mText.textContent.trim().split(/\s+/);
+  mText.textContent = '';
+  mText.setAttribute('aria-label', txt.join(' '));
+  return txt.map((w, i) => {
+    const s = document.createElement('span');
+    s.className = 'w'; s.textContent = w; s.setAttribute('aria-hidden', 'true');
+    mText.appendChild(s);
+    if (i < txt.length - 1) mText.appendChild(document.createTextNode(' '));
+    return s;
+  });
+})();
+(function () {
+  const nav = $('#nav'), hero = $('#hero');
+  let ticking = false;
+  function update() {
+    ticking = false;
+    nav.classList.toggle('is-solid', window.scrollY > hero.offsetHeight - 90);
+    if (reduced) return;
+    const rect = mText.getBoundingClientRect(), vh = window.innerHeight;
+    const p = clamp((vh * 0.78 - rect.top) / (rect.height + vh * 0.1), 0, 1);
+    const n = mWords.length;
+    mWords.forEach((w, i) => { w.style.opacity = (0.2 + 0.8 * clamp((p * (n + 5) - i) / 5, 0, 1)).toFixed(3); });
+  }
+  const req = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+  addEventListener('scroll', req, { passive: true });
+  addEventListener('resize', req);
+  update();
+})();
+
+/* ---------- Simulator ---------- */
+(function () {
+  const desk = $('#desk'), stage = $('#stage'), cv = $('#simCanvas'), g = cv.getContext('2d');
+  const lo = document.createElement('canvas'), lg = lo.getContext('2d');
+  const RES = [360, 540, 720, 900, 1080, 1440, 2160], RESL = ['360p', '540p', '720p', '900p', '1080p', '1440p', '4K'];
+  const FPS = [24, 30, 60, 90, 120, 144, 240];
+  const AR = [{ l: '16:9', v: 16 / 9 }, { l: '21:9', v: 21 / 9 }, { l: '32:9', v: 32 / 9 }];
+  const PRESETS = {
+    console: { res: 3, fps: 1, fov: 70, ar: 0, refl: false, hdr: false, up: false },
+    pc: { res: 5, fps: 3, fov: 90, ar: 0, refl: true, hdr: false, up: true },
+    ultra: { res: 6, fps: 5, fov: 110, ar: 1, refl: true, hdr: true, up: true }
+  };
+  const NAMES = { console: 'Console', pc: 'PC', ultra: 'PC Ultra' };
+  const S = Object.assign({}, PRESETS.console);
+  const rRes = $('#rRes'), rFps = $('#rFps'), rFov = $('#rFov');
+  let visible = true, first = true;
+
+  function setP(el) { el.style.setProperty('--p', ((el.value - el.min) / (el.max - el.min) * 100) + '%'); }
+  function layoutStage() {
+    const w = desk.clientWidth;
+    desk.style.height = Math.round(w * 9 / 16) + 'px';
+    if (first) stage.style.transition = 'none';
+    stage.style.height = Math.round(w / AR[S.ar].v) + 'px';
+    if (first) { stage.offsetHeight; stage.style.transition = ''; first = false; }
+  }
+  function currentPreset() {
+    return Object.keys(PRESETS).find(k => Object.keys(PRESETS[k]).every(p => PRESETS[k][p] === S[p]));
+  }
+  function apply() {
+    rRes.value = S.res; rFps.value = S.fps; rFov.value = S.fov;
+    [rRes, rFps, rFov].forEach(setP);
+    $('#oRes').textContent = RESL[S.res];
+    $('#oFps').textContent = FPS[S.fps] + ' FPS';
+    $('#oFov').textContent = S.fov + ' graus';
+    $$('[data-ar]').forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.ar) === S.ar)));
+    $$('.switch').forEach(b => b.setAttribute('aria-checked', String(!!S[b.dataset.key])));
+    const cp = currentPreset();
+    $$('[data-preset]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.preset === cp)));
+    $('#profileLabel').textContent = 'Perfil: ' + (cp ? NAMES[cp] : 'Personalizado');
+    $('#hudRes').textContent = Math.round(RES[S.res] * AR[S.ar].v) + ' x ' + RES[S.res];
+    $('#hudFps').textContent = FPS[S.fps] + ' FPS (' + (1000 / FPS[S.fps]).toFixed(1).replace('.', ',') + ' ms)';
+    $('#hudFlags').textContent = S.hdr ? 'HDR ligado' : 'HDR desligado';
+    $('#hudAr').textContent = AR[S.ar].l;
+    layoutStage();
+  }
+
+  let tweenId = 0;
+  function tweenTo(target) {
+    const from = { res: S.res, fps: S.fps, fov: S.fov };
+    ['ar', 'refl', 'hdr', 'up'].forEach(k => { S[k] = target[k]; });
+    const id = ++tweenId, t0 = performance.now(), dur = reduced ? 0 : 450;
+    (function step(n) {
+      if (id !== tweenId) return;
+      const p = dur ? Math.min(1, (n - t0) / dur) : 1, e = 1 - Math.pow(1 - p, 3);
+      S.res = Math.round(from.res + (target.res - from.res) * e);
+      S.fps = Math.round(from.fps + (target.fps - from.fps) * e);
+      S.fov = Math.round(from.fov + (target.fov - from.fov) * e);
+      apply();
+      if (p < 1) requestAnimationFrame(step);
+    })(t0);
+  }
+
+  $$('[data-preset]').forEach(b => b.addEventListener('click', () => tweenTo(PRESETS[b.dataset.preset])));
+  rRes.addEventListener('input', () => { tweenId++; S.res = +rRes.value; apply(); });
+  rFps.addEventListener('input', () => { tweenId++; S.fps = +rFps.value; apply(); });
+  rFov.addEventListener('input', () => { tweenId++; S.fov = +rFov.value; apply(); });
+  $$('[data-ar]').forEach(b => b.addEventListener('click', () => { tweenId++; S.ar = +b.dataset.ar; apply(); }));
+  $$('.switch').forEach(b => b.addEventListener('click', () => { tweenId++; S[b.dataset.key] = !S[b.dataset.key]; apply(); }));
+
+  new ResizeObserver(layoutStage).observe(desk);
+  new IntersectionObserver(es => { visible = es[0].isIntersecting; }, { threshold: 0 }).observe(desk);
+  apply();
+
+  function frame(now) {
+    requestAnimationFrame(frame);
+    if (!visible || document.hidden) return;
+    const cw = stage.clientWidth, ch = stage.clientHeight;
+    if (!cw || !ch) return;
+    const d = Math.min(window.devicePixelRatio || 1, 2);
+    const W = Math.round(cw * d), H = Math.round(ch * d);
+    if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+    const t = now / 1000, fps = FPS[S.fps];
+    const tt = reduced ? 10 : (fps >= 60 ? t : Math.floor(t * fps) / fps);
+    const o = { zoom: S.fov / 90, horizon: 0.6, reflect: S.refl ? 1 : 0, hdr: S.hdr ? 1 : 0, moonRel: 0.6, moonY: -0.6 };
+    const ih = Math.round(H * RES[S.res] / 2160);
+    if (ih >= H - 1) {
+      renderScene(g, W, H, tt, o);
+    } else {
+      const iw = Math.max(2, Math.round(ih * W / H));
+      if (lo.width !== iw || lo.height !== ih) { lo.width = iw; lo.height = ih; }
+      renderScene(lg, iw, ih, tt, o);
+      g.imageSmoothingEnabled = S.up; g.imageSmoothingQuality = 'high';
+      g.drawImage(lo, 0, 0, W, H);
+    }
+  }
+  requestAnimationFrame(frame);
+})();
+
+/* ---------- Pipeline ---------- */
+(function () {
+  const STEPS = [
+    { t: 'Licença e acesso', s: 'Contrato, código e metas', lead: 'Todo projeto começa com um acordo. Trabalhamos com o detentor dos direitos e recebemos o código-fonte, as ferramentas de build e a documentação do jogo.',
+      b: ['Contrato de licenciamento e de confidencialidade', 'Acesso ao repositório, à engine e ao pipeline de assets', 'Metas combinadas: plataformas, desempenho e prazo'],
+      term: [['cmd', '$ nyx intake --origem ps5 --engine unreal'], ['ok', 'verificando licença e termos', 'ok'], ['ok', 'inventário de código e ferramentas', 'ok'], ['ok', 'metas de desempenho registradas', 'ok'], ['info', 'escopo inicial pronto para revisão']] },
+    { t: 'Auditoria técnica', s: 'O que o jogo pede do console', lead: 'Mapeamos tudo o que o jogo exige do hardware do console e o que isso vira no PC, antes de escrever a primeira linha de código novo.',
+      b: ['Engine, versão e middlewares em uso', 'Dependências do SDK do console: gráficos, áudio, armazenamento e rede', 'Pontos de risco, como memória unificada, shaders e tempo de carregamento'],
+      term: [['cmd', '$ nyx audit --projeto seu_jogo'], ['ok', 'engine e middlewares detectados', 'ok'], ['ok', 'chamadas do SDK do console', '412 encontradas'], ['ok', 'shaders específicos de plataforma', '38 encontrados'], ['info', 'relatório de riscos gerado']] },
+    { t: 'Camada de plataforma', s: 'Gráficos, áudio, saves e rede', lead: 'Trocamos as chamadas específicas do console por camadas para PC, sem mexer na lógica que faz o jogo ser o jogo.',
+      b: ['Renderização em DirectX 12 e Vulkan', 'Áudio, saves e conquistas pelas interfaces do PC', 'Compilação de shaders e streaming de assets pensados para SSD e HDD'],
+      term: [['cmd', '$ nyx port --gfx dx12,vulkan --audio --storage'], ['ok', 'camada gráfica', 'ok'], ['ok', 'áudio e armazenamento', 'ok'], ['ok', 'saves e conquistas', 'ok'], ['info', 'primeira build para Windows gerada']] },
+    { t: 'Experiência de PC', s: 'Controles, opções e telas', lead: 'É aqui que o jogo deixa de parecer um port. Cada opção que o jogador espera encontrar no PC é construída e testada.',
+      b: ['Mouse e teclado com remapeamento completo, além de suporte a vários controles', 'Menu gráfico com resolução, proporção, campo de visão e taxa de quadros livres', 'Upscalers como DLSS, FSR e XeSS, além de ultrawide e HDR'],
+      term: [['cmd', '$ nyx pc-experience --controles --menu-grafico'], ['ok', 'mouse e teclado com remapeamento', 'ok'], ['ok', 'menu gráfico completo', 'ok'], ['ok', 'upscalers DLSS, FSR e XeSS', 'ok'], ['ok', 'proporções 16:9, 21:9 e 32:9', 'ok']] },
+    { t: 'Otimização e testes', s: 'Estabilidade em hardware real', lead: 'Testamos em uma matriz de hardware, do notebook de entrada ao desktop topo de linha, para que a experiência seja boa fora do laboratório.',
+      b: ['Estabilidade do tempo de quadro, não só a média de FPS', 'Testes de longa duração para encontrar vazamentos de memória', 'Perfis de desempenho por placa de vídeo, processador e quantidade de memória'],
+      term: [['cmd', '$ nyx qa --matriz-de-hardware'], ['ok', 'estabilidade do tempo de quadro', 'ok'], ['ok', 'teste de longa duração', 'ok'], ['ok', 'perfis por GPU, CPU e memória', 'ok'], ['info', 'relatório técnico de desempenho gerado']] },
+    { t: 'Certificação e lançamento', s: 'Lojas, Steam Deck e suporte', lead: 'Entregamos a build final e ficamos ao lado do jogo depois que ele chega aos jogadores.',
+      b: ['Preparação para Steam, Epic Games Store e GOG', 'Verificação de compatibilidade com o Steam Deck', 'Correções e ajustes depois do lançamento'],
+      term: [['cmd', '$ nyx release --lojas steam,epic,gog'], ['ok', 'pacote das lojas', 'ok'], ['ok', 'verificação de compatibilidade', 'ok'], ['ok', 'build final assinada', 'ok'], ['info', 'lançamento pronto para agendar']] }
+  ];
+  const wrap = $('#steps'), fill = $('#railFill'), term = $('#term'), detail = $('#detail');
+  const btns = STEPS.map((st, i) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'step'; b.id = 'tab-' + i;
+    b.setAttribute('role', 'tab'); b.setAttribute('aria-controls', 'detail');
+    b.innerHTML = '<span class="node">' + (i + 1) + '</span><span><strong>' + st.t + '</strong><small>' + st.s + '</small></span>';
+    b.addEventListener('click', () => select(i, false));
+    b.addEventListener('keydown', e => {
+      const map = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 };
+      let n = null;
+      if (map[e.key]) n = (cur + map[e.key] + STEPS.length) % STEPS.length;
+      else if (e.key === 'Home') n = 0; else if (e.key === 'End') n = STEPS.length - 1;
+      if (n !== null) { e.preventDefault(); select(n, true); }
+    });
+    wrap.appendChild(b);
+    return b;
+  });
+  let cur = 0, timers = [];
+
+  function runTerm(lines) {
+    timers.forEach(clearTimeout); timers = [];
+    term.innerHTML = '';
+    lines.forEach((ln, i) => {
+      const add = () => {
+        const row = document.createElement('div');
+        row.className = 'tl ' + (ln[0] === 'ok' ? '' : ln[0]);
+        if (ln[0] === 'ok') {
+          row.innerHTML = '<span class="txt">' + ln[1] + '</span><span class="dots"></span><span class="res">' + ln[2] + '</span>';
+        } else { row.textContent = ln[1]; }
+        term.appendChild(row);
+      };
+      if (reduced) add(); else timers.push(setTimeout(add, 160 + i * 230));
+    });
+  }
+  function select(i, focus) {
+    cur = i;
+    const st = STEPS[i];
+    btns.forEach((b, j) => {
+      b.setAttribute('aria-selected', String(j === i));
+      b.tabIndex = j === i ? 0 : -1;
+      b.classList.toggle('is-done', j < i);
+    });
+    if (focus) btns[i].focus();
+    fill.style.setProperty('--fill', (i / (STEPS.length - 1) * 100) + '%');
+    detail.setAttribute('aria-labelledby', 'tab-' + i);
+    $('#dTitle').textContent = st.t;
+    $('#dLead').textContent = st.lead;
+    $('#dBullets').innerHTML = st.b.map(x => '<li>' + x + '</li>').join('');
+    runTerm(st.term);
+  }
+  select(0, false);
+})();
+
+/* ---------- FAQ ---------- */
+(function () {
+  const QA = [
+    ['Vocês convertem jogos sem autorização?', 'Não. Só trabalhamos com licença do detentor dos direitos. Sem contrato, não há projeto.'],
+    ['Preciso entregar o código-fonte do jogo?', 'Sim. Uma conversão de qualidade parte do código e das ferramentas do jogo. Tudo é protegido por contrato de confidencialidade.'],
+    ['Quanto tempo leva uma conversão?', 'Depende da engine, do tamanho do jogo e de quanto ele usa recursos exclusivos do console. A auditoria técnica, primeira fase do projeto, define o prazo real.'],
+    ['De quais plataformas vocês convertem?', 'PlayStation, Xbox e Nintendo Switch. Pedidos para outros sistemas são avaliados caso a caso.'],
+    ['O jogo vai ficar igual ao do console?', 'Ele mantém o que importa: design, ritmo e identidade. O que muda é a plataforma. O jogo ganha as opções e o desempenho que o PC permite.'],
+    ['Posso contratar só uma parte do trabalho?', 'Pode. Auditoria técnica, camada de plataforma e experiência de PC podem ser contratadas separadamente.']
+  ];
+  const root = $('#faq');
+  QA.forEach((p, i) => {
+    const d = document.createElement('div');
+    d.className = 'qa';
+    d.innerHTML = '<h3><button class="q" type="button" id="q' + i + '" aria-expanded="false" aria-controls="a' + i + '"><span>' + p[0] + '</span><span class="plus" aria-hidden="true"></span></button></h3>' +
+      '<div class="a" id="a' + i + '" role="region" aria-labelledby="q' + i + '"><div><p>' + p[1] + '</p></div></div>';
+    const b = $('.q', d);
+    b.addEventListener('click', () => {
+      const open = !d.classList.contains('open');
+      d.classList.toggle('open', open);
+      b.setAttribute('aria-expanded', String(open));
+    });
+    root.appendChild(d);
+  });
+})();
+
+/* ---------- Project builder and form ---------- */
+(function () {
+  const L = {
+    origin: { ps: 'PlayStation', xb: 'Xbox', sw: 'Nintendo Switch' },
+    engine: { ue: 'Unreal Engine', un: 'Unity', pr: 'Engine própria' },
+    scope: { fiel: 'Conversão fiel', aprim: 'Conversão aprimorada', full: 'Experiência completa de PC' }
+  };
+  const NOTES = {
+    fiel: 'O jogo roda no PC como no console, com controles e opções básicas.',
+    aprim: 'Adiciona menu gráfico completo, mouse e teclado e opções de qualidade.',
+    full: 'Adiciona ultrawide, HDR, upscalers e preparação para mods quando o jogo permite.'
+  };
+  const BASE = ['Licença e acesso', 'Auditoria técnica', 'Camada de plataforma', 'Otimização e testes', 'Certificação e lançamento'];
+  const LEVEL = ['', 'Baixo', 'Baixo', 'Médio', 'Alto', 'Muito alto'];
+  const form = $('#contactForm');
+  const val = n => form.elements[n].value;
+  let lastText = '';
+
+  function calc() {
+    const o = val('origin'), e = val('engine'), s = val('scope');
+    const score = { fiel: 1, aprim: 2, full: 3 }[s] + (e === 'pr' ? 1 : 0) + (o === 'sw' ? 1 : 0);
+    const phases = BASE.slice();
+    if (s === 'aprim' || s === 'full') phases.splice(3, 0, 'Controles e menu gráfico de PC');
+    if (s === 'full') phases.splice(4, 0, 'Ultrawide, HDR e upscalers');
+    return { o, e, s, score, phases };
+  }
+  function render() {
+    const c = calc();
+    $('#sOrigin').textContent = L.origin[c.o];
+    $('#sEngine').textContent = L.engine[c.e];
+    $('#sScope').textContent = L.scope[c.s];
+    $('#sEffort').textContent = LEVEL[c.score];
+    $$('#meter i').forEach((el, i) => el.classList.toggle('on', i < c.score));
+    const f = [];
+    if (c.e === 'pr') f.push('Engine própria: mais sistemas para mapear na auditoria.');
+    if (c.o === 'sw') f.push('O Switch usa arquitetura ARM: mais adaptação de código.');
+    if (c.s === 'full') f.push('Escopo completo: mais opções para construir e testar.');
+    if (!f.length) f.push('Combinação com poucos fatores de risco conhecidos.');
+    $('#factors').innerHTML = f.map(x => '<li>' + x + '</li>').join('');
+    $('#phases').innerHTML = c.phases.map(x => '<li>' + x + '</li>').join('');
+    $('#scopeNote').textContent = NOTES[c.s];
+  }
+  form.addEventListener('change', render);
+  render();
+
+  function setErr(id, bad) { $('#' + id).classList.toggle('has-error', bad); }
+  ['iName', 'iMail'].forEach(id => $('#' + id).addEventListener('input', () => setErr(id === 'iName' ? 'fName' : 'fMail', false)));
+
+  form.addEventListener('submit', ev => {
+    ev.preventDefault();
+    const name = val('name').trim(), mail = val('email').trim();
+    const badName = !name, badMail = !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail);
+    setErr('fName', badName); setErr('fMail', badMail);
+    if (badName || badMail) { (badName ? $('#iName') : $('#iMail')).focus(); return; }
+    const c = calc();
+    lastText = [
+      'Olá, equipe NyxStudio.', '',
+      'Quero conversar sobre a conversão de um jogo para PC.', '',
+      'Nome: ' + name,
+      'E-mail: ' + mail,
+      'Estúdio ou empresa: ' + (val('studio').trim() || 'não informado'),
+      'Plataforma de origem: ' + L.origin[c.o],
+      'Engine: ' + L.engine[c.e],
+      'Escopo: ' + L.scope[c.s],
+      'Esforço inicial estimado: ' + LEVEL[c.score], '',
+      'Sobre o jogo:',
+      val('msg').trim() || 'Ainda não detalhei. Podemos conversar.'
+    ].join('\n');
+    $('#sentText').value = lastText;
+    $('#mailLink').href = 'mailto:' + CONTACT_EMAIL + '?subject=' + encodeURIComponent('Pedido de conversão para PC: ' + (val('studio').trim() || name)) + '&body=' + encodeURIComponent(lastText);
+    $('#copyMsg').textContent = '';
+    form.style.display = 'none';
+    const sent = $('#sent'); sent.classList.add('show'); sent.focus();
+  });
+  $('#editBtn').addEventListener('click', () => { $('#sent').classList.remove('show'); form.style.display = ''; $('#iName').focus(); });
+  $('#copyBtn').addEventListener('click', async () => {
+    const msg = $('#copyMsg');
+    try { await navigator.clipboard.writeText(lastText); msg.textContent = 'Texto copiado.'; }
+    catch (e) {
+      const ta = $('#sentText'); ta.focus(); ta.select();
+      try { document.execCommand('copy'); msg.textContent = 'Texto copiado.'; } catch (e2) { msg.textContent = 'Não foi possível copiar automaticamente. Selecione o texto e copie manualmente.'; }
+    }
+  });
+})();
+</script>
+</body>
+</html>
