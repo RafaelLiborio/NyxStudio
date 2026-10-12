@@ -45,6 +45,13 @@ Sem Supabase configurado, os dados locais são gravados em `brasa-data.json` nes
 
 ## Limites atuais
 
-Esta é uma primeira versão funcional, não uma cópia completa do Discord nem pronta para hospedar uma grande comunidade. Ainda faltam anexos, bots, permissões configuráveis, moderação, recuperação de senha e autenticação de dois fatores. As sessões ativas ficam na memória do processo e terminam quando o servidor reinicia.
+Esta é uma primeira versão funcional, não uma cópia completa do Discord nem pronta para hospedar uma grande comunidade. Ainda faltam anexos, integrações com bots de outras plataformas, permissões configuráveis, moderação, recuperação de senha e autenticação de dois fatores. As sessões ativas ficam na memória do processo e terminam quando o servidor reinicia.
 
 Para seus amigos entrarem de outras cidades, publique em um servidor com HTTPS e endereço público. O áudio usa WebRTC e STUN; algumas redes precisam de um serviço TURN. O arquivo de dados local não é compartilhado entre cópias do app, então todos precisam usar o mesmo endereço publicado.
+# Brasa Music
+
+O Brasa Music aceita links HTTPS diretos para arquivos de áudio, como MP3, OGG ou WAV. Cole o endereço no campo do player. Links de páginas do YouTube, Spotify e outros serviços de streaming não são arquivos de áudio diretos e não funcionam.
+
+O player aparece em todas as comunidades. Fila, pausa, pular, repetição, volume e posição são sincronizados entre os membros. Para o áudio chegar à chamada, alguém precisa estar conectado a uma sala de voz da comunidade; o navegador dessa pessoa envia o áudio pela chamada WebRTC existente. Se ela sair ou fechar o app, a reprodução pausa até outro membro retomá-la dentro de uma chamada.
+
+O endereço precisa permitir reprodução em um elemento de áudio e, para a transmissão na chamada, o host precisa permitir CORS. Nem todos os sites deixam reproduzir ou transmitir seus arquivos; prefira arquivos públicos que você tem direito de usar.

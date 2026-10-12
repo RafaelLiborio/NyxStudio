@@ -99,6 +99,7 @@
           <input class="search-input hidden" id="searchInput" placeholder="Buscar nesta conversa" aria-label="Buscar nesta conversa">
           <button class="icon-action notification-toggle" id="notificationToggle" type="button" title="Notificações" aria-label="Notificações" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><span class="notification-badge hidden" id="notificationCount">0</span></button>
           <button class="icon-action" id="soundToggle" type="button" title="Desativar sons" aria-label="Desativar sons" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4zM15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg></button>
+          <button class="icon-action guild-only" id="musicOpen" type="button" title="Abrir Brasa Music" aria-label="Abrir Brasa Music"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></button>
           <button class="icon-action" id="membersToggle" type="button" title="Mostrar membros" aria-label="Mostrar membros" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.1"></circle><path d="M3.5 19v-1.2a5.5 5.5 0 0 1 11 0V19zM16 5.4a3.1 3.1 0 0 1 0 5.8M17.3 14a4.8 4.8 0 0 1 3.2 4.5v.5h-3.1"></path></svg></button>
         </div>
       </header>
@@ -199,5 +200,17 @@
       <footer><button type="button" class="inline-cancel" id="inlineCancel">Cancelar</button><button type="submit" class="primary inline-submit">Criar</button></footer>
     </form>
   </dialog>
+  <dialog class="music-dialog" id="musicDialog" aria-labelledby="musicTitle">
+    <section class="music-app">
+      <header class="music-header"><div class="music-brand-mark">♫</div><div><p class="eyebrow">PLAYER DE COMUNIDADE</p><h2 id="musicTitle">Brasa Music</h2><small id="musicCommunityName">Comunidade</small></div><button id="musicClose" class="ghost" type="button" aria-label="Fechar">×</button></header>
+      <div class="music-connection" id="musicConnection"><span class="presence-dot"></span><span>Entre em uma chamada para transmitir música</span></div>
+      <label class="music-search"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14.5 14.5 10M8.2 16.3l-1.4 1.4a3.2 3.2 0 0 1-4.5-4.5l4-4a3.2 3.2 0 0 1 4.5 0M15.8 7.7l1.4-1.4a3.2 3.2 0 0 1 4.5 4.5l-4 4a3.2 3.2 0 0 1-4.5 0"/></svg><input id="musicSearchInput" type="url" placeholder="Cole um link direto HTTPS para áudio" autocomplete="off"><button id="musicSearchButton" type="button">Adicionar</button></label>
+      <p class="music-error" id="musicError" role="status"></p>
+      <div class="music-body"><section class="music-results-pane"><div class="music-section-heading"><strong>ADICIONADA AGORA</strong><span id="musicResultCount">0</span></div><div id="musicResults" class="music-results"><p class="music-empty">Cole um link direto para um arquivo de áudio, como MP3 ou OGG. Páginas de YouTube e Spotify não funcionam aqui.</p></div></section><aside class="music-queue-pane"><div class="music-section-heading"><strong>FILA</strong><button id="musicClearQueue" type="button" title="Limpar fila">Limpar</button></div><div id="musicQueue" class="music-queue"><p class="music-empty">A fila está vazia.</p></div></aside></div>
+      <footer class="music-player"><div class="music-current"><img id="musicCover" alt="" src="/brasa-mark.png"><div><strong id="musicTrackTitle">Nada tocando</strong><small id="musicTrackArtist">Cole um link para áudio</small></div></div><div class="music-playback"><div class="music-progress-row"><span id="musicElapsed">0:00</span><input id="musicProgress" type="range" min="0" max="100" value="0" aria-label="Posição da música"><span id="musicDuration">0:00</span></div><div class="music-play-controls"><button id="musicLoop" type="button" aria-label="Repetir faixa" title="Repetir faixa" aria-pressed="false">⟳</button><button id="musicSkip" type="button" aria-label="Pular faixa" title="Pular faixa">⏭</button><button id="musicPlayPause" class="music-play-main" type="button" aria-label="Reproduzir" title="Reproduzir">▶</button><label class="music-volume" aria-label="Volume da música">♪<input id="musicVolume" type="range" min="0" max="100" value="70"></label></div></div></footer>
+      <p class="music-attribution">Use links diretos para áudio que você tem direito de reproduzir. Alguns servidores exigem suporte a CORS para transmitir na chamada.</p>
+    </section>
+  </dialog>
+  <audio id="brasaMusicAudio" crossorigin="anonymous" class="hidden"></audio>
 </body>
 </html>

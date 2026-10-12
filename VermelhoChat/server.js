@@ -21,7 +21,7 @@ const online = new Map();
 const voiceVideoModes = new Map();
 
 function emptyData() {
-  return { users: [], guilds: [], channels: [], messages: [], reactions: [], dms: [], dmMessages: [], invites: [], friendRequests: [], notifications: [], sessions: [] };
+  return { users: [], guilds: [], channels: [], messages: [], reactions: [], dms: [], dmMessages: [], invites: [], friendRequests: [], notifications: [], sessions: [], music: [] };
 }
 function normalizeData(data) {
   const normalized = emptyData();
@@ -109,6 +109,8 @@ function auth(req, res, next) {
 }
 function member(guildId, userId) { return db.guilds.find(g => g.id === guildId)?.members.find(m => m.userId === userId); }
 function canManage(guildId, userId) { const m = member(guildId, userId); return m && ['owner','admin'].includes(m.role); }
+function musicFor(guildId) { let data=db.music.find(item=>item.guildId===guildId);if(!data){data={guildId,queue:[],current:null,playing:false,loop:false,position:0,updatedAt:Date.now()};db.music.push(data)}return data; }
+function publicMusic(data) { return {guildId:data.guildId,queue:data.queue||[],current:data.current||null,playing:Boolean(data.playing),loop:Boolean(data.loop),position:Number(data.position)||0,updatedAt:data.updatedAt||Date.now()}; }
 function emitPresence(userId, state) {
   if (state === 'online') online.set(userId, (online.get(userId) || 0) + 1);
   else { const n = (online.get(userId) || 1) - 1; if (n <= 0) online.delete(userId); else online.set(userId, n); }
@@ -234,10 +236,11 @@ app.delete('/api/friends/:userId', auth, async (req, res) => {
 });
 
 app.get('/api/guilds', auth, (req, res) => res.json(db.guilds.filter(g => member(g.id, req.user.id)).map(g => ({ id:g.id,name:g.name,icon:g.icon,cover:g.cover||'',role:member(g.id,req.user.id).role,channels:db.channels.filter(c=>c.guildId===g.id) }))));
+app.get('/api/guilds/:id/music', auth, (req,res)=>{if(!member(req.params.id,req.user.id))return replyError(res,'Você não faz parte desta comunidade.',403);const data=musicFor(req.params.id);res.json(publicMusic(data))});
 app.post('/api/guilds', auth, async (req, res) => {
   const name = cleanText(req.body.name, 48); if (name.length < 2) return replyError(res, 'O nome da comunidade precisa ter ao menos 2 caracteres.');
   const guild = { id:id(), name, icon:name.slice(0,1).toUpperCase(), cover:'', ownerId:req.user.id, members:[{ userId:req.user.id, role:'owner', joinedAt:Date.now() }] };
-  db.guilds.push(guild); const channel={id:id(),guildId:guild.id,name:'geral',type:'text',topic:'Conversa da comunidade.'}; db.channels.push(channel); await save();
+  db.guilds.push(guild);db.music.push({guildId:guild.id,queue:[],current:null,playing:false,loop:false,position:0,updatedAt:Date.now()});const channel={id:id(),guildId:guild.id,name:'geral',type:'text',topic:'Conversa da comunidade.'}; db.channels.push(channel); await save();
   res.json({ id:guild.id,name:guild.name,icon:guild.icon,cover:guild.cover,role:'owner',channels:[channel] });
 });
 app.patch('/api/guilds/:id', auth, async (req,res)=>{
@@ -261,6 +264,7 @@ app.delete('/api/guilds/:id', auth, async (req,res)=>{
   const messageIds=new Set(db.messages.filter(message=>channelIds.has(message.channelId)).map(message=>message.id));
   channels.filter(channel=>channel.type==='voice').forEach(channel=>io.to(`brasa-${channel.id}`).emit('voice-error',{message:'A comunidade foi excluída.'}));
   db.guilds=db.guilds.filter(item=>item.id!==guild.id);
+  db.music=db.music.filter(item=>item.guildId!==guild.id);
   db.channels=db.channels.filter(channel=>!channelIds.has(channel.id));
   db.messages=db.messages.filter(message=>!channelIds.has(message.channelId));
   db.reactions=db.reactions.filter(reaction=>!messageIds.has(reaction.messageId));
@@ -349,7 +353,35 @@ const parseSocketSession = socket => { const sid=(socket.handshake.headers.cooki
 io.use((socket,next)=>{const s=parseSocketSession(socket);const user=s&&db.users.find(u=>u.id===s.userId);if(!user)return next(new Error('Faça login para conectar.'));socket.user=user;next()});
 io.on('connection',socket=>{
   const user=socket.user;let voiceRoom=null;socket.join(`user:${user.id}`);emitPresence(user.id,'online');
-  socket.on('subscribe:guild',guildId=>{const guild=db.guilds.find(g=>g.id===guildId);if(!guild||!member(guildId,user.id))return;socket.join(`guild:${guildId}`);socket.emit('guild:voice-roster',{guildId,channels:getGuildVoiceRoster(guildId)})});
+  socket.on('subscribe:guild',guildId=>{const guild=db.guilds.find(g=>g.id===guildId);if(!guild||!member(guildId,user.id))return;socket.join(`guild:${guildId}`);socket.emit('guild:voice-roster',{guildId,channels:getGuildVoiceRoster(guildId)});socket.emit('guild:music-state',publicMusic(musicFor(guildId)))});
+  socket.on('music:command',async({guildId,command,track,position}={})=>{
+    if(!member(guildId,user.id))return;
+    const guildChannels=db.channels.filter(channel=>channel.guildId===guildId&&channel.type==='voice');
+    const candidates=guildChannels.flatMap(channel=>[...(io.sockets.adapter.rooms.get(`brasa-${channel.id}`)||[])].map(socketId=>io.sockets.sockets.get(socketId)).filter(Boolean));
+    if(!candidates.length){socket.emit('music:error',{message:'Entre em uma chamada da comunidade para transmitir o áudio do Brasa Music.'});return}
+    const data=musicFor(guildId),host=command==='play'&&voiceRoom?.startsWith('brasa-')&&db.channels.find(channel=>channel.id===voiceRoom.slice(6))?.guildId===guildId?socket:candidates.find(item=>item.id===data.hostSocketId)||candidates[0];
+    if(command==='play'){
+      if(!track?.url)return socket.emit('music:error',{message:'Cole um link HTTPS direto para um arquivo de áudio.'});
+      let directUrl;try{directUrl=new URL(track.url)}catch{return socket.emit('music:error',{message:'Cole um link HTTPS direto para um arquivo de áudio.'})}
+      if(directUrl.protocol!=='https:'||directUrl.username||directUrl.password||directUrl.href.length>2048)return socket.emit('music:error',{message:'Use um link HTTPS público e direto para o áudio.'});
+      const safeTrack={id:directUrl.href,url:directUrl.href,title:cleanText(track.title,160)||directUrl.pathname.split('/').pop()||'Áudio por link',artist:cleanText(track.artist,100)||'Link direto',duration:Math.max(0,Number(track.duration)||0),cover:''};
+      if(data.current){data.queue.push(safeTrack);command='enqueue'}else{data.current=safeTrack;data.playing=true;data.position=0;data.hostSocketId=host.id;host.emit('music:host-action',{action:'play',track:safeTrack,loop:data.loop,position:0})}
+    }else if(command==='enqueue'){
+      let directUrl;try{directUrl=new URL(track?.url)}catch{return socket.emit('music:error',{message:'Cole um link HTTPS direto para um arquivo de áudio.'})}
+      if(directUrl.protocol!=='https:'||directUrl.username||directUrl.password||directUrl.href.length>2048)return socket.emit('music:error',{message:'Use um link HTTPS público e direto para o áudio.'});data.queue.push({id:directUrl.href,url:directUrl.href,title:cleanText(track.title,160)||directUrl.pathname.split('/').pop()||'Áudio por link',artist:cleanText(track.artist,100)||'Link direto',duration:Math.max(0,Number(track.duration)||0),cover:''});
+    }else if(command==='pause'||command==='resume'){
+      if(!data.current)return;if(command==='resume'){data.hostSocketId=host.id;host.emit('music:host-action',{action:'play',track:data.current,loop:data.loop,position:data.position||0});data.playing=true}else{host.emit('music:host-action',{action:'pause'});data.playing=false}
+    }else if(command==='skip'||command==='ended'){
+      if(command==='ended'&&socket.id!==data.hostSocketId)return;
+      if(command==='ended'&&data.loop){data.position=0;data.playing=true;host.emit('music:host-action',{action:'play',track:data.current,loop:true,position:0})}
+      else{data.current=data.queue.shift()||null;data.position=0;data.playing=Boolean(data.current);data.hostSocketId=data.current?host.id:null;host.emit('music:host-action',data.current?{action:'play',track:data.current,loop:data.loop,position:0}:{action:'stop'})}
+    }else if(command==='loop'){data.loop=!data.loop;host.emit('music:host-action',{action:'loop',loop:data.loop})}
+    else if(command==='seek'){data.position=Math.max(0,Math.min(Number(position)||0,data.current?.duration||0));host.emit('music:host-action',{action:'seek',position:data.position})}
+    else if(command==='stop'){host.emit('music:host-action',{action:'stop'});data.current=null;data.queue=[];data.playing=false;data.position=0;data.hostSocketId=null}
+    else return;
+    data.updatedAt=Date.now();await save();io.to(`guild:${guildId}`).emit('guild:music-state',publicMusic(data));
+  });
+  socket.on('music:progress',({guildId,position,duration}={})=>{const data=db.music.find(item=>item.guildId===guildId);if(!member(guildId,user.id)||!data||data.hostSocketId!==socket.id||!Number.isFinite(Number(position)))return;data.position=Math.max(0,Number(position));if(Number.isFinite(Number(duration))&&Number(duration)>0&&data.current)data.current.duration=Number(duration);data.updatedAt=Date.now();socket.to(`guild:${guildId}`).emit('guild:music-progress',{position:data.position,duration:data.current?.duration||0})});
   socket.on('voice-video-mode',({mode}={})=>{if(!voiceRoom||!['screen','camera','none'].includes(mode))return;if(mode==='none')voiceVideoModes.delete(user.id);else voiceVideoModes.set(user.id,mode);socket.to(voiceRoom).emit('voice-video-mode',{userId:user.id,mode})});
   socket.on('subscribe:channel',channelId=>{const c=db.channels.find(x=>x.id===channelId);if(c&&member(c.guildId,user.id))socket.join(`channel:${c.id}`)});
   socket.on('subscribe:dm',dmId=>{const d=db.dms.find(x=>x.id===dmId&&x.userIds.includes(user.id));if(d)socket.join(`dm:${d.id}`)});
@@ -357,15 +389,16 @@ io.on('connection',socket=>{
   socket.on('voice-invite',({dmId}={})=>{const dm=db.dms.find(item=>item.id===dmId&&item.userIds.includes(user.id));if(!dm)return;const targetId=dm.userIds.find(id=>id!==user.id),roomName=`user:${targetId}`,targetSockets=io.sockets.adapter.rooms.get(roomName);if(!targetSockets?.size){socket.emit('voice-invite-status',{dmId,status:'offline'});return}for(const targetSocketId of targetSockets)io.to(targetSocketId).emit('voice-incoming-call',{dmId,caller:publicUser(user),callerSocketId:socket.id});socket.emit('voice-invite-status',{dmId,status:'ringing'})});
   socket.on('voice-invite-response',({dmId,to,status}={})=>{const dm=db.dms.find(item=>item.id===dmId&&item.userIds.includes(user.id)),caller=to&&io.sockets.sockets.get(to);if(!dm||!caller||!dm.userIds.includes(caller.user.id)||caller.user.id===user.id)return;caller.emit('voice-invite-status',{dmId,status:status==='accepted'?'accepted':status==='busy'?'busy':'declined',user:publicUser(user)})});
   socket.on('voice-join',({room}={})=>{if(voiceRoom)leaveVoice();if(typeof room!=='string'||!/^brasa-[a-z0-9-]{1,50}$/.test(room))return;const roomId=room.slice(6),channel=db.channels.find(c=>c.id===roomId&&c.type==='voice'),dm=db.dms.find(item=>item.id===roomId&&item.userIds.includes(user.id));if(channel&&!member(channel.guildId,user.id)||!channel&&!dm)return;const members=io.sockets.adapter.rooms.get(room),limit=dm?2:8;if(members&&members.size>=limit){socket.emit('voice-error',{message:dm?'A ligação já está ocupada.':'A sala está cheia.'});return}const peers=[...(members||[])].map(peerId=>{const peerSocket=io.sockets.sockets.get(peerId);const peerUserId=peerSocket?.user?.id;return {id:peerId,userId:peerUserId,name:peerSocket?.user?.displayName||'Participante',avatar:peerSocket?.user?.avatar||'',videoMode:voiceVideoModes.get(peerUserId)||'none'}});voiceRoom=room;socket.join(room);socket.emit('voice-peers',peers);peers.filter(peer=>peer.videoMode==='screen').forEach(peer=>socket.emit('voice-video-mode',{userId:peer.userId,mode:'screen'}));socket.to(room).emit('voice-peer-joined',{id:socket.id,userId:user.id,name:user.displayName,avatar:user.avatar||'',videoMode:voiceVideoModes.get(user.id)||'none'});if(channel)publishGuildVoiceRoster(channel.guildId)});
-  const leaveVoice=()=>{if(!voiceRoom)return;const room=voiceRoom,roomId=room.slice(6),channel=db.channels.find(c=>c.id===roomId),dm=db.dms.find(item=>item.id===roomId&&item.userIds.includes(user.id));voiceRoom=null;voiceVideoModes.delete(user.id);socket.leave(room);socket.to(room).emit('voice-peer-left',{id:socket.id});if(channel)publishGuildVoiceRoster(channel.guildId);if(dm)io.to(`user:${dm.userIds.find(id=>id!==user.id)}`).emit('voice-call-ended',{dmId:dm.id,userId:user.id})};
-  socket.on('voice-leave',leaveVoice);
+  const leaveVoice=()=>{if(!voiceRoom)return;const hostedMusic=db.music.find(item=>item.hostSocketId===socket.id);if(hostedMusic){hostedMusic.hostSocketId=null;hostedMusic.playing=false;hostedMusic.updatedAt=Date.now();save().catch(()=>{});io.to(`guild:${hostedMusic.guildId}`).emit('guild:music-state',publicMusic(hostedMusic))}const room=voiceRoom,roomId=room.slice(6),channel=db.channels.find(c=>c.id===roomId),dm=db.dms.find(item=>item.id===roomId&&item.userIds.includes(user.id));voiceRoom=null;voiceVideoModes.delete(user.id);socket.leave(room);socket.to(room).emit('voice-peer-left',{id:socket.id});if(channel)publishGuildVoiceRoster(channel.guildId);if(dm)io.to(`user:${dm.userIds.find(id=>id!==user.id)}`).emit('voice-call-ended',{dmId:dm.id,userId:user.id})};
+  socket.on('voice-leave',()=>{const music=db.music.find(item=>item.hostSocketId===socket.id);if(music){music.hostSocketId=null;music.playing=false;music.updatedAt=Date.now();save().catch(()=>{});io.to(`guild:${music.guildId}`).emit('guild:music-state',publicMusic(music))}leaveVoice()});
   socket.on('voice-signal',({to,data}={})=>{if(voiceRoom&&typeof to==='string'&&data&&io.sockets.adapter.rooms.get(voiceRoom)?.has(to))io.to(to).emit('voice-signal',{from:socket.id,data})});
-  socket.on('disconnecting',()=>{if(voiceRoom)leaveVoice()});
+  socket.on('disconnecting',()=>{const music=db.music.find(item=>item.hostSocketId===socket.id);if(music){music.hostSocketId=null;music.playing=false;music.updatedAt=Date.now();save().catch(()=>{});io.to(`guild:${music.guildId}`).emit('guild:music-state',publicMusic(music))}if(voiceRoom)leaveVoice()});
   socket.on('disconnect',()=>emitPresence(user.id,'offline'));
 });
 
 async function start() {
   db = normalizeData(await loadData());
+  let resumedMusicState=false;for(const music of db.music){if(music.playing||music.hostSocketId){music.playing=false;music.hostSocketId=null;music.updatedAt=Date.now();resumedMusicState=true}}if(resumedMusicState)await save();
   if (useSupabase) console.log('Dados carregados do Supabase.');
   else if (process.env.NODE_ENV === 'production') console.warn('Supabase não configurado; usando arquivo local temporário.');
   server.listen(PORT, '0.0.0.0', () => console.log(`Brasa disponível na porta ${PORT}`));
