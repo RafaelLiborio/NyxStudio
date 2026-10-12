@@ -223,6 +223,10 @@ button,select,input,textarea{font:inherit}button{transition:background-color .14
   .search-input{top:67px;width:min(250px,calc(100vw - 90px));font-size:13px}
   .profile-dialog{max-height:86dvh}
 }
+
+/* Keep the Brasa mark on a black button background. */
+.rail-logo{background:#050507;border:1px solid #321019;box-shadow:0 0 0 1px #e51b3520,0 5px 16px #0008}
+.rail-logo:hover{background:#101014;filter:none;border-color:#8e172a;box-shadow:0 0 0 2px #e51b3530,0 5px 16px #0009}
 @media(max-width:460px){
   .channel-header{height:58px;padding-inline:9px;gap:7px}.channel-heading h2{font-size:14px}.channel-heading p{font-size:10px}
   .channel-symbol{width:20px;font-size:19px}.icon-action{width:33px;height:33px}
@@ -524,3 +528,7 @@ body.auth-light .auth-screen{background-color:#e9e9ee;background-blend-mode:scre
 .danger-button:disabled{opacity:.48;cursor:not-allowed}
 #guildDeleteBtn{width:100%;margin:8px 0 2px}
 #guildDeleteConfirm{min-width:0}
+
+/* The Brasa button uses a black background behind the red mark. */
+.rail-logo{background:#050507;border:1px solid #321019;box-shadow:0 0 0 1px #e51b3520,0 5px 16px #0008}
+.rail-logo:hover{background:#101014;filter:none;border-color:#8e172a;box-shadow:0 0 0 2px #e51b3530,0 5px 16px #0009}
