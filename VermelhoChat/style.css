@@ -227,6 +227,23 @@ button,select,input,textarea{font:inherit}button{transition:background-color .14
 /* Keep the Brasa mark on a black button background. */
 .rail-logo{background:#050507;border:1px solid #321019;box-shadow:0 0 0 1px #e51b3520,0 5px 16px #0008}
 .rail-logo:hover{background:#101014;filter:none;border-color:#8e172a;box-shadow:0 0 0 2px #e51b3530,0 5px 16px #0009}
+
+/* Presence, community cover and responsive friend actions. */
+.friend-home-row small{display:flex;align-items:center;gap:6px}
+.presence-dot{display:inline-block;width:8px;height:8px;flex:none;border-radius:50%;background:#666a73;box-shadow:0 0 0 2px #111318}
+.presence-dot.is-online{background:#35d07f;box-shadow:0 0 0 2px #111318,0 0 8px #35d07f55}
+.friend-home-row>button.friend-home-invite{min-width:78px;height:36px;min-height:36px;display:inline-flex;align-items:center;justify-content:center;padding:0 10px;border:1px solid #34313a;border-radius:8px;background:#20171b;color:#f0a0ab;font-size:11px;font-weight:700}
+.friend-home-row>button.friend-home-invite:hover{border-color:#a72038;background:#32131b}
+.community-card{position:relative;isolation:isolate;overflow:hidden}
+.community-cover-image{position:absolute;z-index:-1;inset:0;width:100%;height:100%;object-fit:cover;opacity:.72}
+.community-card:has(.community-cover-image:not(.hidden))::after{content:"";position:absolute;z-index:-1;inset:0;background:linear-gradient(90deg,#09090df2,#09090d9c 70%,#09090d45)}
+.guild-cover-field small{color:var(--muted-foreground);font-size:11px;font-weight:400}
+.guild-cover-preview{display:flex;align-items:center;gap:10px}
+.guild-cover-preview img{width:min(100%,280px);height:86px;object-fit:cover;border:1px solid #3c3038;border-radius:9px}
+#guildCoverPreview{display:flex;align-items:center;gap:10px}
+#guildCoverPreview img{width:min(100%,280px);height:86px;object-fit:cover;border:1px solid #3c3038;border-radius:9px}
+#friendGuildInviteDialog select{width:100%;min-height:44px;padding:8px 10px;border:1px solid var(--input);border-radius:9px;background:#111216;color:var(--foreground)}
+@media(max-width:620px){.friend-home-row{gap:7px;padding-inline:8px}.friend-home-row>button:not(.friend-home-avatar){min-width:64px;padding-inline:7px;font-size:10px}.friend-home-row>button.friend-home-invite{min-width:58px;padding-inline:6px;font-size:10px}}
 @media(max-width:460px){
   .channel-header{height:58px;padding-inline:9px;gap:7px}.channel-heading h2{font-size:14px}.channel-heading p{font-size:10px}
   .channel-symbol{width:20px;font-size:19px}.icon-action{width:33px;height:33px}
@@ -528,6 +545,16 @@ body.auth-light .auth-screen{background-color:#e9e9ee;background-blend-mode:scre
 .danger-button:disabled{opacity:.48;cursor:not-allowed}
 #guildDeleteBtn{width:100%;margin:8px 0 2px}
 #guildDeleteConfirm{min-width:0}
+
+.dm-call-button:not(.hidden){display:grid;place-items:center;color:#64d89b}
+.dm-call-button:not(.hidden):hover{border-color:#23553e;background:#11271c;color:#8cf1b6}
+.incoming-call-banner{position:absolute;z-index:30;top:74px;right:16px;display:flex;align-items:center;gap:12px;width:min(390px,calc(100% - 32px));padding:13px;border:1px solid #38313a;border-radius:13px;background:#17171c;box-shadow:0 16px 42px #000a}
+.incoming-call-banner.hidden{display:none!important}
+.incoming-call-icon{display:grid;place-items:center;width:38px;height:38px;flex:none;border-radius:50%;background:#143522;color:#73e2a6;font-size:20px}
+.incoming-call-copy{display:grid;gap:4px;min-width:0;flex:1}.incoming-call-copy strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}.incoming-call-copy small{color:#aaa5af;font-size:11px}
+.incoming-call-banner button{min-height:34px;padding:0 10px;border:0;border-radius:8px;color:#fff;font-size:11px;font-weight:700;cursor:pointer}
+.incoming-answer{background:#23834e}.incoming-answer:hover{background:#2ba362}.incoming-decline{background:#3a3038}.incoming-decline:hover{background:#652638}
+@media(max-width:560px){.incoming-call-banner{top:64px;right:8px;width:calc(100% - 16px);gap:8px;padding:9px}.incoming-call-banner button{padding-inline:8px}}
 
 /* The Brasa button uses a black background behind the red mark. */
 .rail-logo{background:#050507;border:1px solid #321019;box-shadow:0 0 0 1px #e51b3520,0 5px 16px #0008}

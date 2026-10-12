@@ -21,7 +21,7 @@ const online = new Map();
 const voiceVideoModes = new Map();
 
 function emptyData() {
-  return { users: [], guilds: [], channels: [], messages: [], reactions: [], dms: [], dmMessages: [], invites: [], friendRequests: [], notifications: [] };
+  return { users: [], guilds: [], channels: [], messages: [], reactions: [], dms: [], dmMessages: [], invites: [], friendRequests: [], notifications: [], sessions: [] };
 }
 function normalizeData(data) {
   const normalized = emptyData();
@@ -81,8 +81,28 @@ async function passwordMatches(password, stored) {
 }
 function publicUser(user) { return { id: user.id, username: user.username, displayName: user.displayName, avatar: user.avatar || '' }; }
 function cookie(req, name) { return (req.headers.cookie || '').split(';').map(x => x.trim()).find(x => x.startsWith(`${name}=`))?.slice(name.length + 1); }
+function sessionHash(sid) { return crypto.createHash('sha256').update(String(sid || '')).digest('hex'); }
+function findSession(sid) {
+  if (!sid) return null;
+  const cached = sessions.get(sid);
+  if (cached && cached.expiresAt > Date.now()) return cached;
+  if (cached) sessions.delete(sid);
+  const stored = db.sessions.find(item => item.tokenHash === sessionHash(sid) && item.expiresAt > Date.now());
+  if (!stored) return null;
+  const session = { userId: stored.userId, expiresAt: stored.expiresAt };
+  sessions.set(sid, session);
+  return session;
+}
+async function createSession(user, res) {
+  const sid = token(), expiresAt = Date.now() + 30 * 86400000;
+  db.sessions = db.sessions.filter(item => item.expiresAt > Date.now());
+  db.sessions.push({ tokenHash: sessionHash(sid), userId: user.id, expiresAt });
+  sessions.set(sid, { userId: user.id, expiresAt });
+  await save();
+  res.cookie('brasa_session', sid, { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', maxAge: 30 * 86400000 });
+}
 function auth(req, res, next) {
-  const session = sessions.get(cookie(req, 'brasa_session'));
+  const session = findSession(cookie(req, 'brasa_session'));
   const user = session && db.users.find(x => x.id === session.userId);
   if (!user) return res.status(401).json({ error: 'Entre na sua conta para continuar.' });
   req.user = user; next();
@@ -147,17 +167,17 @@ app.post('/api/register', async (req, res) => {
   if (db.users.some(u => u.username === username)) return replyError(res, 'Esse nome de usuário já está em uso.', 409);
   const user = { id: id(), username, displayName, passwordHash: await hashPassword(password), createdAt: Date.now() };
   db.users.push(user); await save();
-  const sid = token(); sessions.set(sid, { userId: user.id }); res.cookie('brasa_session', sid, { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', maxAge: 30 * 86400000 });
+  await createSession(user, res);
   res.json({ user: publicUser(user) });
 });
 app.post('/api/login', async (req, res) => {
   const username = cleanText(req.body.username, 24).toLowerCase();
   const user = db.users.find(u => u.username === username);
   if (!user || !await passwordMatches(String(req.body.password || ''), user.passwordHash)) return replyError(res, 'Usuário ou senha incorretos.', 401);
-  const sid = token(); sessions.set(sid, { userId: user.id }); res.cookie('brasa_session', sid, { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', maxAge: 30 * 86400000 });
+  await createSession(user, res);
   res.json({ user: publicUser(user) });
 });
-app.post('/api/logout', (req, res) => { sessions.delete(cookie(req, 'brasa_session')); res.clearCookie('brasa_session'); res.json({ ok: true }); });
+app.post('/api/logout', async (req, res) => { const sid=cookie(req,'brasa_session');sessions.delete(sid);db.sessions=db.sessions.filter(item=>item.tokenHash!==sessionHash(sid));await save();res.clearCookie('brasa_session');res.json({ ok: true }); });
 
 app.patch('/api/profile', auth, async (req, res) => {
   const displayName = cleanText(req.body.displayName, 32);
@@ -183,7 +203,7 @@ app.get('/api/friends', auth, (req, res) => {
   const rows = db.friendRequests.filter(x => x.fromId === req.user.id || x.toId === req.user.id).map(x => ({
     status: x.status,
     direction: x.fromId === req.user.id ? 'outgoing' : 'incoming',
-    user: publicUser(db.users.find(u => u.id === (x.fromId === req.user.id ? x.toId : x.fromId)))
+    user: { ...publicUser(db.users.find(u => u.id === (x.fromId === req.user.id ? x.toId : x.fromId))), state: online.has(x.fromId === req.user.id ? x.toId : x.fromId) ? 'online' : 'offline' }
   })).filter(x => x.user);
   res.json(rows);
 });
@@ -213,12 +233,12 @@ app.delete('/api/friends/:userId', auth, async (req, res) => {
   res.json({ ok: true });
 });
 
-app.get('/api/guilds', auth, (req, res) => res.json(db.guilds.filter(g => member(g.id, req.user.id)).map(g => ({ id:g.id,name:g.name,icon:g.icon,role:member(g.id,req.user.id).role,channels:db.channels.filter(c=>c.guildId===g.id) }))));
+app.get('/api/guilds', auth, (req, res) => res.json(db.guilds.filter(g => member(g.id, req.user.id)).map(g => ({ id:g.id,name:g.name,icon:g.icon,cover:g.cover||'',role:member(g.id,req.user.id).role,channels:db.channels.filter(c=>c.guildId===g.id) }))));
 app.post('/api/guilds', auth, async (req, res) => {
   const name = cleanText(req.body.name, 48); if (name.length < 2) return replyError(res, 'O nome da comunidade precisa ter ao menos 2 caracteres.');
-  const guild = { id:id(), name, icon:name.slice(0,1).toUpperCase(), ownerId:req.user.id, members:[{ userId:req.user.id, role:'owner', joinedAt:Date.now() }] };
+  const guild = { id:id(), name, icon:name.slice(0,1).toUpperCase(), cover:'', ownerId:req.user.id, members:[{ userId:req.user.id, role:'owner', joinedAt:Date.now() }] };
   db.guilds.push(guild); const channel={id:id(),guildId:guild.id,name:'geral',type:'text',topic:'Conversa da comunidade.'}; db.channels.push(channel); await save();
-  res.json({ id:guild.id,name:guild.name,icon:guild.icon,role:'owner',channels:[channel] });
+  res.json({ id:guild.id,name:guild.name,icon:guild.icon,cover:guild.cover,role:'owner',channels:[channel] });
 });
 app.patch('/api/guilds/:id', auth, async (req,res)=>{
   const guild=db.guilds.find(item=>item.id===req.params.id);
@@ -226,9 +246,11 @@ app.patch('/api/guilds/:id', auth, async (req,res)=>{
   if(!canManage(guild.id,req.user.id))return replyError(res,'Somente quem administra esta comunidade pode editá-la.',403);
   const name=cleanText(req.body.name,48);
   if(name.length<2)return replyError(res,'O nome da comunidade precisa ter ao menos 2 caracteres.');
-  guild.name=name;guild.icon=name.slice(0,1).toUpperCase();await save();
-  const community={id:guild.id,name:guild.name,icon:guild.icon,role:member(guild.id,req.user.id).role,channels:db.channels.filter(channel=>channel.guildId===guild.id)};
-  io.to(`guild:${guild.id}`).emit('guild:updated',{id:guild.id,name:guild.name,icon:guild.icon});
+  const cover=typeof req.body.cover==='string'?req.body.cover:guild.cover||'';
+  if(cover&&(!/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(cover)||cover.length>900_000))return replyError(res,'Capa inválida. Use PNG, JPG ou WebP com até 650 KB.');
+  guild.name=name;guild.icon=name.slice(0,1).toUpperCase();guild.cover=cover;await save();
+  const community={id:guild.id,name:guild.name,icon:guild.icon,cover:guild.cover,role:member(guild.id,req.user.id).role,channels:db.channels.filter(channel=>channel.guildId===guild.id)};
+  io.to(`guild:${guild.id}`).emit('guild:updated',{id:guild.id,name:guild.name,icon:guild.icon,cover:guild.cover});
   res.json(community);
 });
 app.delete('/api/guilds/:id', auth, async (req,res)=>{
@@ -255,7 +277,7 @@ app.get('/api/guilds/:id/members', auth, (req,res)=>{
 app.post('/api/guilds/:id/channels', auth, async (req,res)=>{
   if(!canManage(req.params.id,req.user.id))return replyError(res,'Somente quem administra esta comunidade pode criar canais.',403);
   const name=cleanText(req.body.name,32).toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9_-]/g,''); if(name.length<2)return replyError(res,'Nome de canal inválido.');
-  const type=req.body.type==='voice'?'voice':'text'; const channel={id:id(),guildId:req.params.id,name,type,topic:cleanText(req.body.topic,120)};db.channels.push(channel);await save();res.json(channel);
+  const type=req.body.type==='voice'?'voice':'text'; const channel={id:id(),guildId:req.params.id,name,type,topic:cleanText(req.body.topic,120)};db.channels.push(channel);await save();io.to(`guild:${req.params.id}`).emit('guild:channel-added',channel);res.json(channel);
 });
 app.post('/api/guilds/:id/invites', auth, async (req,res)=>{
   if(!member(req.params.id,req.user.id))return replyError(res,'Você não faz parte desta comunidade.',403);
@@ -269,14 +291,14 @@ app.post('/api/guilds/:id/members', auth, async (req, res) => {
   if (!other || !friends) return replyError(res, 'Você só pode convidar uma pessoa que já é sua amiga.', 403);
   const added = !member(guild.id, other.id);
   if (added) { guild.members.push({ userId: other.id, role: 'member', joinedAt: Date.now() }); await save(); }
-  const community = { id: guild.id, name: guild.name, icon: guild.icon, role: member(guild.id, other.id).role, channels: db.channels.filter(c => c.guildId === guild.id) };
+  const community = { id: guild.id, name: guild.name, icon: guild.icon, cover: guild.cover || '', role: member(guild.id, other.id).role, channels: db.channels.filter(c => c.guildId === guild.id) };
   if (added) await createNotifications([other.id], 'guild_added', 'Você entrou em uma comunidade', `${req.user.displayName} adicionou você a ${guild.name}.`, { guildId: guild.id });
   io.to(`user:${other.id}`).emit('guild:added', community);
   res.json(community);
 });
 app.post('/api/invites/:code/join', auth, async (req,res)=>{
   const invite=db.invites.find(x=>x.code===req.params.code&&x.expiresAt>Date.now());const guild=invite&&db.guilds.find(g=>g.id===invite.guildId);if(!guild)return replyError(res,'Convite inválido ou expirado.',404);
-  const joined=!member(guild.id,req.user.id);if(joined)guild.members.push({userId:req.user.id,role:'member',joinedAt:Date.now()});await save();if(joined)await createNotifications([invite.createdBy],'guild_joined','Novo membro na comunidade',`${req.user.displayName} entrou em ${guild.name}.`,{guildId:guild.id});res.json({id:guild.id,name:guild.name,icon:guild.icon,role:member(guild.id,req.user.id).role,channels:db.channels.filter(c=>c.guildId===guild.id)});
+  const joined=!member(guild.id,req.user.id);if(joined)guild.members.push({userId:req.user.id,role:'member',joinedAt:Date.now()});await save();if(joined)await createNotifications([invite.createdBy],'guild_joined','Novo membro na comunidade',`${req.user.displayName} entrou em ${guild.name}.`,{guildId:guild.id});res.json({id:guild.id,name:guild.name,icon:guild.icon,cover:guild.cover||'',role:member(guild.id,req.user.id).role,channels:db.channels.filter(c=>c.guildId===guild.id)});
 });
 
 app.get('/api/channels/:id/messages', auth, (req,res)=>{
@@ -291,16 +313,21 @@ app.patch('/api/messages/:id', auth, async (req,res)=>{
   const m=db.messages.find(x=>x.id===req.params.id);if(!m||m.userId!==req.user.id)return replyError(res,'Mensagem não encontrada ou sem permissão.',404);const text=cleanText(req.body.text);if(!text)return replyError(res,'A mensagem está vazia.');m.text=text;m.editedAt=Date.now();await save();io.to(`channel:${m.channelId}`).emit('message:edit',{id:m.id,text:m.text,editedAt:m.editedAt});res.json(m);
 });
 app.delete('/api/messages/:id', auth, async (req,res)=>{
-  const m=db.messages.find(x=>x.id===req.params.id);if(!m)return replyError(res,'Mensagem não encontrada.',404);const c=db.channels.find(x=>x.id===m.channelId);if(m.userId!==req.user.id&&!canManage(c?.guildId,req.user.id))return replyError(res,'Sem permissão para excluir.',403);db.messages=db.messages.filter(x=>x.id!==m.id);db.reactions=db.reactions.filter(x=>x.messageId!==m.id);await save();io.to(`channel:${m.channelId}`).emit('message:delete',{id:m.id});res.json({ok:true});
+  const m=db.messages.find(x=>x.id===req.params.id),dmMessage=db.dmMessages.find(x=>x.id===req.params.id);if(!m&&!dmMessage)return replyError(res,'Mensagem não encontrada.',404);
+  if(m){const c=db.channels.find(x=>x.id===m.channelId);if(m.userId!==req.user.id&&!canManage(c?.guildId,req.user.id))return replyError(res,'Sem permissão para excluir.',403);db.messages=db.messages.filter(x=>x.id!==m.id)}
+  if(dmMessage){const dm=db.dms.find(x=>x.id===dmMessage.dmId&&x.userIds.includes(req.user.id));if(!dm||dmMessage.userId!==req.user.id)return replyError(res,'Sem permissão para excluir esta mensagem.',403);db.dmMessages=db.dmMessages.filter(x=>x.id!==dmMessage.id)}
+  const messageId=(m||dmMessage).id;db.reactions=db.reactions.filter(x=>x.messageId!==messageId);await save();if(m)io.to(`channel:${m.channelId}`).emit('message:delete',{id:messageId});else io.to(`dm:${dmMessage.dmId}`).emit('dm:delete',{id:messageId});res.json({ok:true});
 });
 app.post('/api/messages/:id/reactions', auth, async (req,res)=>{
-  const m=db.messages.find(x=>x.id===req.params.id);const c=m&&db.channels.find(x=>x.id===m.channelId);if(!m||!member(c?.guildId,req.user.id))return replyError(res,'Mensagem não encontrada.',404);const emoji=cleanText(req.body.emoji,8);if(!emoji)return replyError(res,'Emoji inválido.');let r=db.reactions.find(x=>x.messageId===m.id&&x.userId===req.user.id&&x.emoji===emoji);if(r)db.reactions=db.reactions.filter(x=>x!==r);else db.reactions.push({messageId:m.id,userId:req.user.id,emoji});await save();const all=db.reactions.filter(x=>x.messageId===m.id);io.to(`channel:${m.channelId}`).emit('message:reactions',{id:m.id,reactions:all});res.json(all);
+  const m=db.messages.find(x=>x.id===req.params.id),dmMessage=db.dmMessages.find(x=>x.id===req.params.id);if(!m&&!dmMessage)return replyError(res,'Mensagem não encontrada.',404);
+  const channel=m&&db.channels.find(x=>x.id===m.channelId),dm=dmMessage&&db.dms.find(x=>x.id===dmMessage.dmId&&x.userIds.includes(req.user.id));if(m&&!member(channel?.guildId,req.user.id)||dmMessage&&!dm)return replyError(res,'Mensagem não encontrada.',404);
+  const messageId=(m||dmMessage).id,emoji=cleanText(req.body.emoji,8);if(!emoji)return replyError(res,'Emoji inválido.');let r=db.reactions.find(x=>x.messageId===messageId&&x.userId===req.user.id&&x.emoji===emoji);if(r)db.reactions=db.reactions.filter(x=>x!==r);else db.reactions.push({messageId,userId:req.user.id,emoji});await save();const all=db.reactions.filter(x=>x.messageId===messageId);if(m)io.to(`channel:${m.channelId}`).emit('message:reactions',{id:messageId,reactions:all});else io.to(`dm:${dmMessage.dmId}`).emit('dm:reactions',{id:messageId,reactions:all});res.json(all);
 });
 
 app.get('/api/users/search',auth,(req,res)=>{const q=cleanText(req.query.q,24).toLowerCase();res.json(q?db.users.filter(u=>u.id!==req.user.id&&u.username.includes(q)).slice(0,10).map(publicUser):[])});
 app.get('/api/dms',auth,(req,res)=>res.json(db.dms.filter(d=>d.userIds.includes(req.user.id)).map(d=>({id:d.id,users:d.userIds.filter(id=>id!==req.user.id).map(id=>publicUser(db.users.find(u=>u.id===id))).filter(Boolean)}))));
 app.post('/api/dms',auth,async(req,res)=>{const other=db.users.find(u=>u.id===req.body.userId);if(!other||other.id===req.user.id)return replyError(res,'Usuário não encontrado.',404);let dm=db.dms.find(d=>d.userIds.includes(req.user.id)&&d.userIds.includes(other.id)&&d.userIds.length===2);if(!dm){dm={id:id(),userIds:[req.user.id,other.id]};db.dms.push(dm);await save()}res.json({id:dm.id,users:[publicUser(other)]})});
-app.get('/api/dms/:id/messages',auth,(req,res)=>{const dm=db.dms.find(d=>d.id===req.params.id&&d.userIds.includes(req.user.id));if(!dm)return replyError(res,'Conversa não encontrada.',404);res.json(db.dmMessages.filter(m=>m.dmId===dm.id).slice(-100).map(m=>({...m,user:publicUser(db.users.find(u=>u.id===m.userId))})))});
+app.get('/api/dms/:id/messages',auth,(req,res)=>{const dm=db.dms.find(d=>d.id===req.params.id&&d.userIds.includes(req.user.id));if(!dm)return replyError(res,'Conversa não encontrada.',404);res.json(db.dmMessages.filter(m=>m.dmId===dm.id).slice(-100).map(m=>({...m,user:publicUser(db.users.find(u=>u.id===m.userId)),reactions:db.reactions.filter(r=>r.messageId===m.id)})))});
 app.post('/api/dms/:id/messages',auth,async(req,res)=>{const dm=db.dms.find(d=>d.id===req.params.id&&d.userIds.includes(req.user.id));if(!dm)return replyError(res,'Conversa não encontrada.',404);const text=cleanText(req.body.text);let attachments;try{attachments=cleanAttachments(req.body.attachments)}catch(error){return replyError(res,error.message)}if(!text&&!attachments.length)return replyError(res,'Escreva uma mensagem ou adicione um anexo.');const m={id:id(),dmId:dm.id,userId:req.user.id,text,attachments,createdAt:Date.now()};db.dmMessages.push(m);await save();const result={...m,user:publicUser(req.user)};io.to(`dm:${dm.id}`).emit('dm:new',result);await createNotifications(dm.userIds.filter(userId=>userId!==req.user.id),'dm_message','Nova mensagem direta',`${req.user.displayName}: ${text.slice(0,120)||'Enviou um anexo.'}`,{dmId:dm.id,senderId:req.user.id});res.json(result)});
 
 function getGuildVoiceRoster(guildId) {
@@ -318,7 +345,7 @@ function publishGuildVoiceRoster(guildId) {
   io.to(`guild:${guildId}`).emit('guild:voice-roster', { guildId, channels: getGuildVoiceRoster(guildId) });
 }
 
-const parseSocketSession = socket => { const sid=(socket.handshake.headers.cookie||'').split(';').map(x=>x.trim()).find(x=>x.startsWith('brasa_session='))?.slice('brasa_session='.length);return sid&&sessions.get(sid); };
+const parseSocketSession = socket => { const sid=(socket.handshake.headers.cookie||'').split(';').map(x=>x.trim()).find(x=>x.startsWith('brasa_session='))?.slice('brasa_session='.length);return findSession(sid); };
 io.use((socket,next)=>{const s=parseSocketSession(socket);const user=s&&db.users.find(u=>u.id===s.userId);if(!user)return next(new Error('Faça login para conectar.'));socket.user=user;next()});
 io.on('connection',socket=>{
   const user=socket.user;let voiceRoom=null;socket.join(`user:${user.id}`);emitPresence(user.id,'online');
@@ -327,8 +354,10 @@ io.on('connection',socket=>{
   socket.on('subscribe:channel',channelId=>{const c=db.channels.find(x=>x.id===channelId);if(c&&member(c.guildId,user.id))socket.join(`channel:${c.id}`)});
   socket.on('subscribe:dm',dmId=>{const d=db.dms.find(x=>x.id===dmId&&x.userIds.includes(user.id));if(d)socket.join(`dm:${d.id}`)});
   socket.on('typing',({channelId,dmId}={})=>{if(channelId){const c=db.channels.find(x=>x.id===channelId);if(c&&member(c.guildId,user.id))socket.to(`channel:${c.id}`).emit('typing',{user:publicUser(user),channelId})}else if(dmId){const d=db.dms.find(x=>x.id===dmId&&x.userIds.includes(user.id));if(d)socket.to(`dm:${d.id}`).emit('typing',{user:publicUser(user),dmId})}});
-  socket.on('voice-join',({room}={})=>{if(voiceRoom)leaveVoice();if(typeof room!=='string'||!/^brasa-[a-z0-9-]{1,50}$/.test(room))return;const channel=db.channels.find(c=>c.id===room.slice(6)&&c.type==='voice');if(!channel||!member(channel.guildId,user.id))return;const members=io.sockets.adapter.rooms.get(room);if(members&&members.size>=8){socket.emit('voice-error',{message:'A sala está cheia.'});return}const peers=[...(members||[])].map(peerId=>{const peerSocket=io.sockets.sockets.get(peerId);const peerUserId=peerSocket?.user?.id;return {id:peerId,userId:peerUserId,name:peerSocket?.user?.displayName||'Participante',avatar:peerSocket?.user?.avatar||'',videoMode:voiceVideoModes.get(peerUserId)||'none'}});voiceRoom=room;socket.join(room);socket.emit('voice-peers',peers);peers.filter(peer=>peer.videoMode==='screen').forEach(peer=>socket.emit('voice-video-mode',{userId:peer.userId,mode:'screen'}));socket.to(room).emit('voice-peer-joined',{id:socket.id,userId:user.id,name:user.displayName,avatar:user.avatar||'',videoMode:voiceVideoModes.get(user.id)||'none'});publishGuildVoiceRoster(channel.guildId)});
-  const leaveVoice=()=>{if(!voiceRoom)return;const room=voiceRoom,channel=db.channels.find(c=>c.id===room.slice(6));voiceRoom=null;voiceVideoModes.delete(user.id);socket.leave(room);socket.to(room).emit('voice-peer-left',{id:socket.id});if(channel)publishGuildVoiceRoster(channel.guildId)};
+  socket.on('voice-invite',({dmId}={})=>{const dm=db.dms.find(item=>item.id===dmId&&item.userIds.includes(user.id));if(!dm)return;const targetId=dm.userIds.find(id=>id!==user.id),roomName=`user:${targetId}`,targetSockets=io.sockets.adapter.rooms.get(roomName);if(!targetSockets?.size){socket.emit('voice-invite-status',{dmId,status:'offline'});return}for(const targetSocketId of targetSockets)io.to(targetSocketId).emit('voice-incoming-call',{dmId,caller:publicUser(user),callerSocketId:socket.id});socket.emit('voice-invite-status',{dmId,status:'ringing'})});
+  socket.on('voice-invite-response',({dmId,to,status}={})=>{const dm=db.dms.find(item=>item.id===dmId&&item.userIds.includes(user.id)),caller=to&&io.sockets.sockets.get(to);if(!dm||!caller||!dm.userIds.includes(caller.user.id)||caller.user.id===user.id)return;caller.emit('voice-invite-status',{dmId,status:status==='accepted'?'accepted':status==='busy'?'busy':'declined',user:publicUser(user)})});
+  socket.on('voice-join',({room}={})=>{if(voiceRoom)leaveVoice();if(typeof room!=='string'||!/^brasa-[a-z0-9-]{1,50}$/.test(room))return;const roomId=room.slice(6),channel=db.channels.find(c=>c.id===roomId&&c.type==='voice'),dm=db.dms.find(item=>item.id===roomId&&item.userIds.includes(user.id));if(channel&&!member(channel.guildId,user.id)||!channel&&!dm)return;const members=io.sockets.adapter.rooms.get(room),limit=dm?2:8;if(members&&members.size>=limit){socket.emit('voice-error',{message:dm?'A ligação já está ocupada.':'A sala está cheia.'});return}const peers=[...(members||[])].map(peerId=>{const peerSocket=io.sockets.sockets.get(peerId);const peerUserId=peerSocket?.user?.id;return {id:peerId,userId:peerUserId,name:peerSocket?.user?.displayName||'Participante',avatar:peerSocket?.user?.avatar||'',videoMode:voiceVideoModes.get(peerUserId)||'none'}});voiceRoom=room;socket.join(room);socket.emit('voice-peers',peers);peers.filter(peer=>peer.videoMode==='screen').forEach(peer=>socket.emit('voice-video-mode',{userId:peer.userId,mode:'screen'}));socket.to(room).emit('voice-peer-joined',{id:socket.id,userId:user.id,name:user.displayName,avatar:user.avatar||'',videoMode:voiceVideoModes.get(user.id)||'none'});if(channel)publishGuildVoiceRoster(channel.guildId)});
+  const leaveVoice=()=>{if(!voiceRoom)return;const room=voiceRoom,roomId=room.slice(6),channel=db.channels.find(c=>c.id===roomId),dm=db.dms.find(item=>item.id===roomId&&item.userIds.includes(user.id));voiceRoom=null;voiceVideoModes.delete(user.id);socket.leave(room);socket.to(room).emit('voice-peer-left',{id:socket.id});if(channel)publishGuildVoiceRoster(channel.guildId);if(dm)io.to(`user:${dm.userIds.find(id=>id!==user.id)}`).emit('voice-call-ended',{dmId:dm.id,userId:user.id})};
   socket.on('voice-leave',leaveVoice);
   socket.on('voice-signal',({to,data}={})=>{if(voiceRoom&&typeof to==='string'&&data&&io.sockets.adapter.rooms.get(voiceRoom)?.has(to))io.to(to).emit('voice-signal',{from:socket.id,data})});
   socket.on('disconnecting',()=>{if(voiceRoom)leaveVoice()});

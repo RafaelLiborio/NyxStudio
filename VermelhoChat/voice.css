@@ -29,6 +29,21 @@
 @media(max-width:700px){.voice-stage{inset:62px 0 0}.voice-stage-head h2{font-size:17px}.voice-person-name{font-size:14px}.voice-person-state{font-size:11px}.voice-controls{gap:8px}.voice-control,.end-call{min-width:52px}.voice-control small,.end-call small{font-size:10px}}
 @media(max-width:460px){.voice-stage{inset:58px 0 0}.voice-stage-head{padding:10px 12px}.voice-controls{padding-inline:7px}.voice-control,.end-call{min-width:44px}.voice-control-group{gap:4px}.voice-count{font-size:11px}}
 
+/* Keep every call control inside the visible panel at narrow and short sizes. */
+.main-panel{min-width:0;min-height:0;overflow:hidden}
+.voice-stage{min-width:0;min-height:0;grid-template-rows:minmax(58px,auto) minmax(0,1fr) minmax(68px,auto);overflow:hidden}
+.voice-stage-head{min-width:0;padding:clamp(10px,2vw,20px) clamp(12px,3vw,26px)}
+.voice-stage-head>div{min-width:0}
+.voice-stage-head h2{max-width:min(55vw,520px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.voice-grid-wrap{min-width:0;min-height:0;overflow:auto;overscroll-behavior:contain}
+.voice-grid{min-width:0;max-width:100%;grid-template-columns:repeat(auto-fit,minmax(min(250px,100%),1fr));align-content:center}
+.voice-person{min-width:0;min-height:min(205px,32vh)}
+.voice-controls{min-width:0;max-width:100%;min-height:0;max-height:30dvh;flex-wrap:wrap;overflow-y:auto;overscroll-behavior:contain;gap:clamp(8px,2vw,28px)}
+.voice-control-group{min-width:0;flex-wrap:wrap;justify-content:center}
+@media(max-width:700px){.voice-stage{grid-template-rows:minmax(54px,auto) minmax(0,1fr) minmax(66px,auto)}.voice-grid{grid-template-columns:repeat(auto-fit,minmax(min(175px,100%),1fr))}.voice-controls{max-height:34dvh;justify-content:space-evenly}.voice-count{display:none}}
+@media(max-width:440px){.voice-stage{grid-template-rows:minmax(50px,auto) minmax(0,1fr) minmax(62px,auto)}.voice-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.voice-person{min-height:clamp(104px,23vh,150px);aspect-ratio:1.1}.voice-person .avatar{width:clamp(46px,14vw,62px);height:clamp(46px,14vw,62px)}.voice-controls{max-height:38dvh;padding-inline:5px;gap:4px}.voice-control-group{gap:4px}.voice-control,.end-call{min-width:43px;height:50px}.voice-control small,.end-call small{font-size:8px}}
+@media(max-height:520px){.voice-stage{grid-template-rows:48px minmax(0,1fr) 62px}.voice-stage-head{padding-block:5px}.voice-room-mark{width:34px;height:34px}.voice-controls{max-height:28dvh;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;padding-block:5px}.voice-person{min-height:110px}.voice-grid-wrap{padding:8px}}
+
 /* Keep voice participants and shared screens inside equal, predictable tiles. */
 .voice-grid{width:min(100%,1440px);grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr));align-items:stretch;align-content:center}
 .voice-person{width:100%;min-width:0;min-height:0;aspect-ratio:16/10}
@@ -44,3 +59,18 @@
 .voice-stage-head,.voice-controls{min-width:0;flex:none}
 .voice-grid-wrap{min-width:0;min-height:0;overflow:auto;overscroll-behavior:contain;align-content:center}
 .voice-grid{min-width:0;min-height:0;max-height:100%;align-self:center}
+
+/* Keep every call control inside the visible panel at narrow and short sizes. */
+.main-panel{min-width:0;min-height:0;overflow:hidden}
+.voice-stage{min-width:0;min-height:0;grid-template-rows:minmax(58px,auto) minmax(0,1fr) minmax(68px,auto);overflow:hidden}
+.voice-stage-head{min-width:0;padding:clamp(10px,2vw,20px) clamp(12px,3vw,26px)}
+.voice-stage-head>div{min-width:0}
+.voice-stage-head h2{max-width:min(55vw,520px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.voice-grid-wrap{min-width:0;min-height:0;overflow:auto;overscroll-behavior:contain}
+.voice-grid{min-width:0;max-width:100%;grid-template-columns:repeat(auto-fit,minmax(min(250px,100%),1fr));align-content:center}
+.voice-person{min-width:0;min-height:min(205px,32vh)}
+.voice-controls{min-width:0;max-width:100%;min-height:0;max-height:30dvh;flex-wrap:wrap;overflow-y:auto;overscroll-behavior:contain;gap:clamp(8px,2vw,28px)}
+.voice-control-group{min-width:0;flex-wrap:wrap;justify-content:center}
+@media(max-width:700px){.voice-stage{grid-template-rows:minmax(54px,auto) minmax(0,1fr) minmax(66px,auto)}.voice-grid{grid-template-columns:repeat(auto-fit,minmax(min(175px,100%),1fr))}.voice-controls{max-height:34dvh;justify-content:space-evenly}.voice-count{display:none}}
+@media(max-width:440px){.voice-stage{grid-template-rows:minmax(50px,auto) minmax(0,1fr) minmax(62px,auto)}.voice-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.voice-person{min-height:clamp(104px,23vh,150px);aspect-ratio:1.1}.voice-person .avatar{width:clamp(46px,14vw,62px);height:clamp(46px,14vw,62px)}.voice-controls{max-height:38dvh;padding-inline:5px;gap:4px}.voice-control-group{gap:4px}.voice-control,.end-call{min-width:43px;height:50px}.voice-control small,.end-call small{font-size:8px}}
+@media(max-height:520px){.voice-stage{grid-template-rows:48px minmax(0,1fr) 62px}.voice-stage-head{padding-block:5px}.voice-room-mark{width:34px;height:34px}.voice-controls{max-height:28dvh;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;padding-block:5px}.voice-person{min-height:110px}.voice-grid-wrap{padding:8px}}
