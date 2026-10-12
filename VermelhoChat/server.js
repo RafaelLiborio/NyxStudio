@@ -110,6 +110,7 @@ function auth(req, res, next) {
 function member(guildId, userId) { return db.guilds.find(g => g.id === guildId)?.members.find(m => m.userId === userId); }
 function canManage(guildId, userId) { const m = member(guildId, userId); return m && ['owner','admin'].includes(m.role); }
 function musicFor(guildId) { let data=db.music.find(item=>item.guildId===guildId);if(!data){data={guildId,queue:[],current:null,playing:false,loop:false,position:0,updatedAt:Date.now()};db.music.push(data)}return data; }
+function isStreamingPageHost(hostname) { const host=String(hostname||'').toLowerCase();return ['youtube.com','youtu.be','spotify.com'].some(domain=>host===domain||host.endsWith('.'+domain)); }
 function publicMusic(data) { return {guildId:data.guildId,queue:data.queue||[],current:data.current||null,playing:Boolean(data.playing),loop:Boolean(data.loop),position:Number(data.position)||0,updatedAt:data.updatedAt||Date.now()}; }
 function emitPresence(userId, state) {
   if (state === 'online') online.set(userId, (online.get(userId) || 0) + 1);
@@ -364,11 +365,13 @@ io.on('connection',socket=>{
       if(!track?.url)return socket.emit('music:error',{message:'Cole um link HTTPS direto para um arquivo de áudio.'});
       let directUrl;try{directUrl=new URL(track.url)}catch{return socket.emit('music:error',{message:'Cole um link HTTPS direto para um arquivo de áudio.'})}
       if(directUrl.protocol!=='https:'||directUrl.username||directUrl.password||directUrl.href.length>2048)return socket.emit('music:error',{message:'Use um link HTTPS público e direto para o áudio.'});
+      if(isStreamingPageHost(directUrl.hostname))return socket.emit('music:error',{message:'Links de páginas do YouTube/Spotify não são arquivos de áudio diretos. Use um link para MP3, OGG ou WAV.'});
       const safeTrack={id:directUrl.href,url:directUrl.href,title:cleanText(track.title,160)||directUrl.pathname.split('/').pop()||'Áudio por link',artist:cleanText(track.artist,100)||'Link direto',duration:Math.max(0,Number(track.duration)||0),cover:''};
       if(data.current){data.queue.push(safeTrack);command='enqueue'}else{data.current=safeTrack;data.playing=true;data.position=0;data.hostSocketId=host.id;host.emit('music:host-action',{action:'play',track:safeTrack,loop:data.loop,position:0})}
     }else if(command==='enqueue'){
       let directUrl;try{directUrl=new URL(track?.url)}catch{return socket.emit('music:error',{message:'Cole um link HTTPS direto para um arquivo de áudio.'})}
-      if(directUrl.protocol!=='https:'||directUrl.username||directUrl.password||directUrl.href.length>2048)return socket.emit('music:error',{message:'Use um link HTTPS público e direto para o áudio.'});data.queue.push({id:directUrl.href,url:directUrl.href,title:cleanText(track.title,160)||directUrl.pathname.split('/').pop()||'Áudio por link',artist:cleanText(track.artist,100)||'Link direto',duration:Math.max(0,Number(track.duration)||0),cover:''});
+      if(directUrl.protocol!=='https:'||directUrl.username||directUrl.password||directUrl.href.length>2048)return socket.emit('music:error',{message:'Use um link HTTPS público e direto para o áudio.'});
+      if(isStreamingPageHost(directUrl.hostname))return socket.emit('music:error',{message:'Links de páginas do YouTube/Spotify não são arquivos de áudio diretos. Use um link para MP3, OGG ou WAV.'});data.queue.push({id:directUrl.href,url:directUrl.href,title:cleanText(track.title,160)||directUrl.pathname.split('/').pop()||'Áudio por link',artist:cleanText(track.artist,100)||'Link direto',duration:Math.max(0,Number(track.duration)||0),cover:''});
     }else if(command==='pause'||command==='resume'){
       if(!data.current)return;if(command==='resume'){data.hostSocketId=host.id;host.emit('music:host-action',{action:'play',track:data.current,loop:data.loop,position:data.position||0});data.playing=true}else{host.emit('music:host-action',{action:'pause'});data.playing=false}
     }else if(command==='skip'||command==='ended'){
