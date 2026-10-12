@@ -7,7 +7,7 @@ const { Server } = require('socket.io');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { maxHttpBufferSize: 100_000 });
+const io = new Server(server, { maxHttpBufferSize: 8_000_000 });
 const PORT = Number(process.env.PORT) || 3000;
 const DATA_FILE = process.env.BRASA_DATA_FILE || path.join(__dirname, 'brasa-data.json');
 const SUPABASE_URL = process.env.SUPABASE_URL?.replace(/\/$/, '');
@@ -96,6 +96,23 @@ function emitPresence(userId, state) {
 }
 function replyError(res, error, status = 400) { return res.status(status).json({ error }); }
 function cleanText(value, max = 2000) { return typeof value === 'string' ? value.trim().slice(0, max) : ''; }
+function cleanAttachments(value) {
+  if (value === undefined) return [];
+  if (!Array.isArray(value) || value.length > 4) throw new Error('Envie no máximo 4 anexos por mensagem.');
+  const allowed = new Set(['image/png','image/jpeg','image/gif','image/webp','image/bmp','image/avif','application/pdf','text/plain']);
+  let total = 0;
+  return value.map(item => {
+    const name = cleanText(item?.name, 120) || 'anexo';
+    const type = String(item?.type || '');
+    const dataUrl = typeof item?.dataUrl === 'string' ? item.dataUrl : '';
+    const match = /^data:([\w.+-]+\/[\w.+-]+);base64,([A-Za-z0-9+/]+={0,2})$/.exec(dataUrl);
+    if (!allowed.has(type) || !match || match[1] !== type) throw new Error('Tipo de anexo não permitido. Use imagem, PDF ou arquivo de texto.');
+    const size = Buffer.from(match[2], 'base64').length;
+    total += size;
+    if (size > 3_000_000 || total > 4_000_000) throw new Error('Os anexos devem somar no máximo 4 MB.');
+    return { name, type, size, dataUrl };
+  });
+}
 async function createNotifications(userIds, type, title, message, metadata = {}) {
   const targets = [...new Set(userIds)].filter(Boolean);
   if (!targets.length) return;
@@ -110,13 +127,13 @@ async function createNotifications(userIds, type, title, message, metadata = {})
 }
 
 app.disable('x-powered-by');
-app.use(express.json({ limit: '128kb' }));
+app.use(express.json({ limit: '8mb' }));
 app.get('/health', (_req, res) => res.json({ ok: true }));
 app.get('/', (_req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 app.get('/app.js', (_req, res) => res.sendFile(path.join(__dirname, 'app.js')));
 app.get('/style.css', (_req, res) => res.sendFile(path.join(__dirname, 'style.css')));
 app.get('/voice.css', (_req, res) => res.sendFile(path.join(__dirname, 'voice.css')));
-app.get('/brasa-flame.svg', (_req, res) => res.sendFile(path.join(__dirname, 'brasa-flame.svg'), { headers: { 'Cache-Control': 'public, max-age=86400' } }));
+app.get('/brasa-mark.png', (_req, res) => res.sendFile(path.join(__dirname, 'brasa-mark.png'), { headers: { 'Cache-Control': 'public, max-age=86400' } }));
 app.get('/brasa-login-bg.svg', (_req, res) => res.sendFile(path.join(__dirname, 'brasa-login-bg.svg'), { headers: { 'Cache-Control': 'public, max-age=86400' } }));
 app.get('/api/session', auth, (req, res) => res.json({ user: publicUser(req.user) }));
 app.get('/api/notifications', auth, (req, res) => res.json(db.notifications.filter(item => item.userId === req.user.id).slice(-60).reverse()));
@@ -214,6 +231,23 @@ app.patch('/api/guilds/:id', auth, async (req,res)=>{
   io.to(`guild:${guild.id}`).emit('guild:updated',{id:guild.id,name:guild.name,icon:guild.icon});
   res.json(community);
 });
+app.delete('/api/guilds/:id', auth, async (req,res)=>{
+  const guild=db.guilds.find(item=>item.id===req.params.id);
+  if(!guild)return replyError(res,'Comunidade não encontrada.',404);
+  if(guild.ownerId!==req.user.id)return replyError(res,'Somente quem criou a comunidade pode excluí-la.',403);
+  const channels=db.channels.filter(channel=>channel.guildId===guild.id),channelIds=new Set(channels.map(channel=>channel.id));
+  const messageIds=new Set(db.messages.filter(message=>channelIds.has(message.channelId)).map(message=>message.id));
+  channels.filter(channel=>channel.type==='voice').forEach(channel=>io.to(`brasa-${channel.id}`).emit('voice-error',{message:'A comunidade foi excluída.'}));
+  db.guilds=db.guilds.filter(item=>item.id!==guild.id);
+  db.channels=db.channels.filter(channel=>!channelIds.has(channel.id));
+  db.messages=db.messages.filter(message=>!channelIds.has(message.channelId));
+  db.reactions=db.reactions.filter(reaction=>!messageIds.has(reaction.messageId));
+  db.invites=db.invites.filter(invite=>invite.guildId!==guild.id);
+  db.notifications=db.notifications.filter(item=>item.metadata?.guildId!==guild.id&&!channelIds.has(item.metadata?.channelId));
+  await save();
+  io.to(`guild:${guild.id}`).emit('guild:deleted',{id:guild.id});
+  res.json({ok:true,id:guild.id});
+});
 app.get('/api/guilds/:id/members', auth, (req,res)=>{
   const g=db.guilds.find(x=>x.id===req.params.id); if(!g||!member(g.id,req.user.id))return replyError(res,'Comunidade não encontrada.',404);
   res.json(g.members.map(m=>({...publicUser(db.users.find(u=>u.id===m.userId)),role:m.role,state:online.has(m.userId)?'online':'offline'})).filter(u=>u.id));
@@ -251,7 +285,7 @@ app.get('/api/channels/:id/messages', auth, (req,res)=>{
 });
 app.post('/api/channels/:id/messages', auth, async (req,res)=>{
   const channel=db.channels.find(c=>c.id===req.params.id);if(!channel||channel.type!=='text'||!member(channel.guildId,req.user.id))return replyError(res,'Canal não encontrado.',404);
-  const text=cleanText(req.body.text);if(!text)return replyError(res,'A mensagem está vazia.');const message={id:id(),channelId:channel.id,userId:req.user.id,text,createdAt:Date.now(),editedAt:null};db.messages.push(message);await save();const result={...message,user:publicUser(req.user),reactions:[]};io.to(`channel:${channel.id}`).emit('message:new',result);const guild=db.guilds.find(item=>item.id===channel.guildId);await createNotifications(guild.members.map(item=>item.userId).filter(userId=>userId!==req.user.id),'channel_message',`Nova mensagem em #${channel.name}`,`${req.user.displayName}: ${text.slice(0,120)}`,{guildId:guild.id,channelId:channel.id,senderId:req.user.id});res.json(result);
+  const text=cleanText(req.body.text);let attachments;try{attachments=cleanAttachments(req.body.attachments)}catch(error){return replyError(res,error.message)}if(!text&&!attachments.length)return replyError(res,'Escreva uma mensagem ou adicione um anexo.');const message={id:id(),channelId:channel.id,userId:req.user.id,text,attachments,createdAt:Date.now(),editedAt:null};db.messages.push(message);await save();const result={...message,user:publicUser(req.user),reactions:[]};io.to(`channel:${channel.id}`).emit('message:new',result);const guild=db.guilds.find(item=>item.id===channel.guildId);await createNotifications(guild.members.map(item=>item.userId).filter(userId=>userId!==req.user.id),'channel_message',`Nova mensagem em #${channel.name}`,`${req.user.displayName}: ${text.slice(0,120)||'Enviou um anexo.'}`,{guildId:guild.id,channelId:channel.id,senderId:req.user.id});res.json(result);
 });
 app.patch('/api/messages/:id', auth, async (req,res)=>{
   const m=db.messages.find(x=>x.id===req.params.id);if(!m||m.userId!==req.user.id)return replyError(res,'Mensagem não encontrada ou sem permissão.',404);const text=cleanText(req.body.text);if(!text)return replyError(res,'A mensagem está vazia.');m.text=text;m.editedAt=Date.now();await save();io.to(`channel:${m.channelId}`).emit('message:edit',{id:m.id,text:m.text,editedAt:m.editedAt});res.json(m);
@@ -267,7 +301,7 @@ app.get('/api/users/search',auth,(req,res)=>{const q=cleanText(req.query.q,24).t
 app.get('/api/dms',auth,(req,res)=>res.json(db.dms.filter(d=>d.userIds.includes(req.user.id)).map(d=>({id:d.id,users:d.userIds.filter(id=>id!==req.user.id).map(id=>publicUser(db.users.find(u=>u.id===id))).filter(Boolean)}))));
 app.post('/api/dms',auth,async(req,res)=>{const other=db.users.find(u=>u.id===req.body.userId);if(!other||other.id===req.user.id)return replyError(res,'Usuário não encontrado.',404);let dm=db.dms.find(d=>d.userIds.includes(req.user.id)&&d.userIds.includes(other.id)&&d.userIds.length===2);if(!dm){dm={id:id(),userIds:[req.user.id,other.id]};db.dms.push(dm);await save()}res.json({id:dm.id,users:[publicUser(other)]})});
 app.get('/api/dms/:id/messages',auth,(req,res)=>{const dm=db.dms.find(d=>d.id===req.params.id&&d.userIds.includes(req.user.id));if(!dm)return replyError(res,'Conversa não encontrada.',404);res.json(db.dmMessages.filter(m=>m.dmId===dm.id).slice(-100).map(m=>({...m,user:publicUser(db.users.find(u=>u.id===m.userId))})))});
-app.post('/api/dms/:id/messages',auth,async(req,res)=>{const dm=db.dms.find(d=>d.id===req.params.id&&d.userIds.includes(req.user.id));if(!dm)return replyError(res,'Conversa não encontrada.',404);const text=cleanText(req.body.text);if(!text)return replyError(res,'A mensagem está vazia.');const m={id:id(),dmId:dm.id,userId:req.user.id,text,createdAt:Date.now()};db.dmMessages.push(m);await save();const result={...m,user:publicUser(req.user)};io.to(`dm:${dm.id}`).emit('dm:new',result);await createNotifications(dm.userIds.filter(userId=>userId!==req.user.id),'dm_message','Nova mensagem direta',`${req.user.displayName}: ${text.slice(0,120)}`,{dmId:dm.id,senderId:req.user.id});res.json(result)});
+app.post('/api/dms/:id/messages',auth,async(req,res)=>{const dm=db.dms.find(d=>d.id===req.params.id&&d.userIds.includes(req.user.id));if(!dm)return replyError(res,'Conversa não encontrada.',404);const text=cleanText(req.body.text);let attachments;try{attachments=cleanAttachments(req.body.attachments)}catch(error){return replyError(res,error.message)}if(!text&&!attachments.length)return replyError(res,'Escreva uma mensagem ou adicione um anexo.');const m={id:id(),dmId:dm.id,userId:req.user.id,text,attachments,createdAt:Date.now()};db.dmMessages.push(m);await save();const result={...m,user:publicUser(req.user)};io.to(`dm:${dm.id}`).emit('dm:new',result);await createNotifications(dm.userIds.filter(userId=>userId!==req.user.id),'dm_message','Nova mensagem direta',`${req.user.displayName}: ${text.slice(0,120)||'Enviou um anexo.'}`,{dmId:dm.id,senderId:req.user.id});res.json(result)});
 
 function getGuildVoiceRoster(guildId) {
   return db.channels.filter(c => c.guildId === guildId && c.type === 'voice').map(channel => {
